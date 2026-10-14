@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UTM Governor — Settings</title>
+  <link rel="stylesheet" href="../panel/panel.css">
+  <link rel="stylesheet" href="options.css">
+</head>
+<body class="side">
+  <div class="wrap">
+    <h1>UTM Governor settings</h1>
+
+    <section class="card">
+      <h2>Workspaces</h2>
+      <p class="hint">One workspace per client or brand. Each has its own approved values, naming rules, domains, presets and shortener.</p>
+      <div class="row">
+        <select id="wsSelect" aria-label="Workspace to edit"></select>
+        <button id="wsAdd">+ New</button>
+        <button id="wsDup">Duplicate</button>
+        <button id="wsDel" class="ghost">Delete</button>
+      </div>
+      <div class="field"><label for="wsName">Name</label><input id="wsName"></div>
+    </section>
+
+    <section class="card">
+      <h2>Naming rules</h2>
+      <label class="check"><input type="checkbox" id="rLower"> Force lowercase (Facebook → facebook)</label>
+      <div class="row">
+        <label for="rSpace">Replace spaces with</label>
+        <select id="rSpace">
+          <option value="-">- (hyphen)</option>
+          <option value="_">_ (underscore)</option>
+          <option value="+">+ (plus)</option>
+          <option value="">keep spaces (%20)</option>
+        </select>
+      </div>
+      <label class="check"><input type="checkbox" id="rStrip"> Strip special characters (keeps letters, numbers, - _ . ~ + | :)</label>
+      <div class="field">
+        <span class="lbl">Required fields</span>
+        <div class="row" id="rRequired"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Approved values</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="wsSources">Sources (one per line)</label>
+          <textarea id="wsSources" rows="7" spellcheck="false"></textarea>
+          <label class="check"><input type="checkbox" id="rLockSources"> Lock to this list (dropdown only)</label>
+        </div>
+        <div class="field">
+          <label for="wsMediums">Mediums (one per line)</label>
+          <textarea id="wsMediums" rows="7" spellcheck="false"></textarea>
+          <label class="check"><input type="checkbox" id="rLockMediums"> Lock to this list (dropdown only)</label>
+        </div>
+      </div>
+      <ul id="listCheck" class="issues"></ul>
+      <div class="field">
+        <label for="wsDomains">Allowed destination domains (one per line, subdomains included; empty = any)</label>
+        <textarea id="wsDomains" rows="3" spellcheck="false" placeholder="acme.com"></textarea>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Campaign name formula</h2>
+      <p class="hint">Leave empty for free text. Use <code>[field]</code> for an input, <code>[field|a,b,c]</code> for a dropdown, <code>[date:yyyy-mm]</code> for today (tokens: yyyy yy mm dd ww q).</p>
+      <input id="wsFormula" spellcheck="false" placeholder="[date:yyyy-mm]_[product]_[region|uae,ksa,kw]_[objective|awareness,traffic,conversions]">
+      <div id="formulaPreview" class="hint"></div>
+    </section>
+
+    <section class="card">
+      <h2>Default custom parameters</h2>
+      <p class="hint">Added to every link in this workspace, e.g. <code>ref=partner</code>. One <code>key=value</code> per line.</p>
+      <textarea id="wsExtras" rows="2" spellcheck="false"></textarea>
+    </section>
+
+    <section class="card">
+      <h2>Presets</h2>
+      <ul id="presetList" class="plist"></ul>
+      <p class="hint">Save presets from the Build tab.</p>
+    </section>
+
+    <section class="card">
+      <h2>Link shortener (bring your own key)</h2>
+      <p class="hint">Your key is stored only in this browser and sent only to the provider.</p>
+      <div class="grid">
+        <div class="field">
+          <label for="shProvider">Provider</label>
+          <select id="shProvider">
+            <option value="none">None</option>
+            <option value="bitly">Bitly</option>
+            <option value="dub">Dub</option>
+            <option value="rebrandly">Rebrandly</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="shDomain">Branded domain (optional)</label>
+          <input id="shDomain" placeholder="go.acme.com">
+        </div>
+      </div>
+      <div class="field"><label for="shToken">API key / token</label><input id="shToken" type="password" autocomplete="off"></div>
+      <div class="row"><button id="shGrant">Allow access to provider</button><button id="shTest">Test</button><span id="shStatus" class="hint"></span></div>
+    </section>
+
+    <section class="card">
+      <h2>General</h2>
+      <label class="check"><input type="checkbox" id="sStrip"> Strip click IDs (fbclid, gclid, msclkid, _gl …) from destination URLs</label>
+      <label class="check"><input type="checkbox" id="sLink"> Live link checks — detect 404s and redirects that drop UTMs</label>
+      <p class="hint">Live checks need permission to request any site. They send a HEAD request (no cookies) to the destination only.</p>
+    </section>
+
+    <section class="card">
+      <h2>Share with your team</h2>
+      <p class="hint">Export this workspace (rules, values, presets — never the API key) and send the file to teammates to import.</p>
+      <div class="row">
+        <button id="exWs">Export workspace</button>
+        <button id="exAll">Export everything</button>
+        <label class="btn">Import… <input type="file" id="imFile" accept="application/json" hidden></label>
+        <span id="imStatus" class="hint"></span>
+      </div>
+    </section>
+
+    <div id="toast" class="toast" role="status" hidden></div>
+  </div>
+  <script type="module" src="options.js"></script>
+</body>
+</html>

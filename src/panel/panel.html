@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UTM Governor</title>
+  <link rel="stylesheet" href="panel.css">
+</head>
+<body>
+  <header class="top">
+    <select id="workspace" title="Client workspace" aria-label="Workspace"></select>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="build" aria-selected="true">Build</button>
+      <button role="tab" data-tab="bulk">Bulk</button>
+      <button role="tab" data-tab="history">History</button>
+    </nav>
+    <button id="dock" class="icon" title="Open in side panel (stays open while you work)" aria-label="Open in side panel">⇥</button>
+    <button id="settings" class="icon" title="Settings & workspaces" aria-label="Settings">⚙</button>
+  </header>
+
+  <!-- BUILD -->
+  <main id="tab-build" class="tab">
+    <div class="field">
+      <label for="url">Destination URL</label>
+      <div class="row">
+        <input id="url" type="url" placeholder="https://example.com/landing" autocomplete="off" spellcheck="false">
+        <button id="useTab" class="icon" title="Use current tab URL" aria-label="Use current tab">⟲</button>
+      </div>
+      <div id="urlStatus" class="hint"></div>
+    </div>
+
+    <div class="row presets">
+      <select id="preset" aria-label="Preset"><option value="">Apply preset…</option></select>
+      <button id="savePreset" class="ghost" title="Save current fields as a preset">Save preset</button>
+    </div>
+
+    <div class="grid">
+      <div class="field" data-f="source">
+        <label for="f-source">Source <span class="req">*</span></label>
+        <input id="f-source" list="dl-source" autocomplete="off" spellcheck="false" placeholder="facebook">
+        <select id="s-source" hidden></select>
+        <datalist id="dl-source"></datalist>
+      </div>
+      <div class="field" data-f="medium">
+        <label for="f-medium">Medium <span class="req">*</span></label>
+        <input id="f-medium" list="dl-medium" autocomplete="off" spellcheck="false" placeholder="paid_social">
+        <select id="s-medium" hidden></select>
+        <datalist id="dl-medium"></datalist>
+      </div>
+    </div>
+
+    <div id="ga4" class="ga4 idle" aria-live="polite">
+      <span class="pill" id="ga4Pill">GA4 channel: —</span>
+      <ul id="ga4Msgs"></ul>
+    </div>
+
+    <div class="field" data-f="campaign">
+      <label for="f-campaign">Campaign <span class="req">*</span></label>
+      <div id="formula" class="formula" hidden></div>
+      <input id="f-campaign" autocomplete="off" spellcheck="false" placeholder="2026-10_winter-boots">
+    </div>
+
+    <div class="grid">
+      <div class="field" data-f="content">
+        <label for="f-content">Content</label>
+        <input id="f-content" autocomplete="off" spellcheck="false" placeholder="carousel_a">
+      </div>
+      <div class="field" data-f="term">
+        <label for="f-term">Term</label>
+        <input id="f-term" autocomplete="off" spellcheck="false" placeholder="{keyword}">
+      </div>
+    </div>
+
+    <details id="more">
+      <summary>utm_id, custom params & ad macros</summary>
+      <div class="field" data-f="id">
+        <label for="f-id">utm_id (campaign ID, for GA4 cost import)</label>
+        <input id="f-id" autocomplete="off" spellcheck="false">
+      </div>
+      <div id="extras"></div>
+      <button id="addExtra" class="ghost small">+ Custom parameter</button>
+      <div class="macros">
+        <div class="row">
+          <label for="macroPlatform">Insert dynamic macro into last field:</label>
+          <select id="macroPlatform"></select>
+        </div>
+        <div id="macroChips" class="chips"></div>
+      </div>
+    </details>
+
+    <ul id="issues" class="issues"></ul>
+
+    <div class="output">
+      <textarea id="out" readonly rows="3" placeholder="Your tagged URL appears here" aria-label="Tagged URL"></textarea>
+      <div id="removed" class="hint"></div>
+      <div class="copy">
+        <button id="copyUrl" class="primary">Copy URL</button>
+        <button id="copyQuery" title="utm_source=…&… only — for Meta 'URL parameters' and Google Ads final URL suffix">Params only</button>
+        <button id="copyRow" title="Paste into Google Sheets/Excel to fill a whole row">Sheet row</button>
+        <button id="copyMd">Markdown</button>
+        <button id="copyHtml">HTML</button>
+      </div>
+      <div class="copy">
+        <button id="shorten">Shorten</button>
+        <button id="qrBtn">QR code</button>
+        <button id="checkBtn">Check link</button>
+        <button id="reset" class="ghost">Clear</button>
+      </div>
+      <div id="short" class="hint"></div>
+      <div id="qr" class="qr" hidden>
+        <canvas id="qrCanvas" width="240" height="240"></canvas>
+        <div class="row">
+          <button id="qrPng" class="small">Download PNG</button>
+          <button id="qrSvg" class="small">Download SVG</button>
+          <label class="small"><input type="checkbox" id="qrShort"> encode short link</label>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- BULK -->
+  <main id="tab-bulk" class="tab" hidden>
+    <section>
+      <h2>Matrix builder</h2>
+      <p class="hint">One value per line (or comma-separated). Every combination becomes a link.</p>
+      <div class="field"><label for="b-urls">Landing pages</label><textarea id="b-urls" rows="3" spellcheck="false"></textarea></div>
+      <div class="grid">
+        <div class="field"><label for="b-source">Sources</label><textarea id="b-source" rows="3" spellcheck="false"></textarea></div>
+        <div class="field"><label for="b-medium">Mediums</label><textarea id="b-medium" rows="3" spellcheck="false"></textarea></div>
+      </div>
+      <div class="grid">
+        <div class="field"><label for="b-campaign">Campaigns</label><textarea id="b-campaign" rows="2" spellcheck="false"></textarea></div>
+        <div class="field"><label for="b-content">Content (optional)</label><textarea id="b-content" rows="2" spellcheck="false"></textarea></div>
+      </div>
+      <div class="row">
+        <button id="b-go" class="primary">Generate</button>
+        <span id="b-count" class="hint"></span>
+      </div>
+      <div id="b-result" hidden>
+        <div class="row">
+          <button id="b-copy">Copy for Sheets</button>
+          <button id="b-csv">Download CSV</button>
+          <button id="b-save" class="ghost">Save to history</button>
+        </div>
+        <div class="tablewrap"><table id="b-table"></table></div>
+      </div>
+    </section>
+    <section>
+      <h2>Tag every link in email HTML</h2>
+      <p class="hint">Uses source/medium/campaign from the Build tab. Only tags links on this workspace's domains (if set). Skips mailto:, anchors and ESP merge tags.</p>
+      <textarea id="h-in" rows="5" spellcheck="false" placeholder="Paste email HTML…"></textarea>
+      <div class="row">
+        <button id="h-go" class="primary">Tag links</button>
+        <button id="h-copy" disabled>Copy HTML</button>
+        <span id="h-count" class="hint"></span>
+      </div>
+    </section>
+  </main>
+
+  <!-- HISTORY -->
+  <main id="tab-history" class="tab" hidden>
+    <div class="row">
+      <input id="hSearch" type="search" placeholder="Search links, campaigns, sources…" aria-label="Search history">
+      <label class="small"><input type="checkbox" id="hAllWs"> all workspaces</label>
+    </div>
+    <div class="row">
+      <button id="hCopy" class="small">Copy for Sheets</button>
+      <button id="hCsv" class="small">Export CSV</button>
+      <button id="hClear" class="small ghost">Clear</button>
+      <span id="hCount" class="hint"></span>
+    </div>
+    <ul id="hList" class="history"></ul>
+  </main>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+  <script type="module" src="panel.js"></script>
+</body>
+</html>

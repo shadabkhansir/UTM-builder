@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "UTM Governor — GA4-safe UTM Builder",
+  "short_name": "UTM Governor",
+  "version": "0.1.0",
+  "description": "Build GA4-safe UTM links in one click: live channel prediction, naming rules, client workspaces, bulk matrix, QR codes.",
+  "minimum_chrome_version": "116",
+  "icons": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
+  "action": {
+    "default_title": "Build UTM link",
+    "default_popup": "src/panel/panel.html",
+    "default_icon": { "16": "icons/icon16.png", "32": "icons/icon32.png" }
+  },
+  "side_panel": { "default_path": "src/panel/panel.html" },
+  "background": { "service_worker": "src/background/background.js", "type": "module" },
+  "options_page": "src/options/options.html",
+  "permissions": ["activeTab", "storage", "contextMenus", "sidePanel", "clipboardWrite"],
+  "optional_host_permissions": [
+    "https://api-ssl.bitly.com/*",
+    "https://api.dub.co/*",
+    "https://api.rebrandly.com/*",
+    "https://*/*",
+    "http://*/*"
+  ],
+  "commands": {
+    "_execute_action": { "suggested_key": { "default": "Alt+U" }, "description": "Open UTM builder" }
+  }
+}

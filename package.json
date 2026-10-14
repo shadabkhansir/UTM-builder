@@ -1,0 +1,11 @@
+{
+  "name": "utm-governor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "UTM builder & link governance Chrome extension",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "package": "mkdir -p dist && rm -f dist/utm-governor.zip && zip -r dist/utm-governor.zip manifest.json src icons"
+  }
+}
