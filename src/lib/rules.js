@@ -4,7 +4,8 @@
 
 import { splitMacros, hostOf, normalizeDestination } from './url.js';
 
-export const FIELDS = ['source', 'medium', 'campaign', 'term', 'content', 'id'];
+export const FIELDS = ['source', 'medium', 'campaign', 'term', 'content', 'id', 'source_platform', 'creative_format', 'marketing_tactic'];
+export const GA4_EXTRA_FIELDS = ['source_platform', 'creative_format', 'marketing_tactic'];
 
 export const DEFAULT_RULES = {
   lowercase: true,
@@ -13,7 +14,47 @@ export const DEFAULT_RULES = {
   lockSources: false,
   lockMediums: false,
   required: ['source', 'medium', 'campaign'],
+  campaignRegex: '', // optional extra check, e.g. ^\d{4}-\d{2}_[a-z0-9-]+$
+  nonLatin: 'allow', // 'allow' | 'transliterate' (Arabic → Latin, é → e) | 'block'
 };
+
+// Variables usable in any field or campaign formula. Resolved at build time.
+export const VARIABLES = ['page_title', 'domain', 'path', 'client', 'user'];
+const VAR_RE = /\[(page_title|domain|path|client|user|date(?::[^\]]*)?)\]/gi;
+
+export function resolveVariables(value, ctx = {}) {
+  return String(value ?? '').replace(VAR_RE, (_, name) => {
+    const n = name.toLowerCase();
+    if (n.startsWith('date')) return formatDate(ctx.now || new Date(), name.split(':')[1] || 'yyyy-mm-dd');
+    return ctx[n] ?? '';
+  });
+}
+
+export function hasVariables(value) {
+  VAR_RE.lastIndex = 0;
+  const found = VAR_RE.test(String(value ?? ''));
+  VAR_RE.lastIndex = 0;
+  return found;
+}
+
+const ARABIC = {
+  'ا': 'a', 'أ': 'a', 'إ': 'i', 'آ': 'aa', 'ٱ': 'a', 'ب': 'b', 'ت': 't', 'ث': 'th', 'ج': 'j', 'ح': 'h', 'خ': 'kh',
+  'د': 'd', 'ذ': 'dh', 'ر': 'r', 'ز': 'z', 'س': 's', 'ش': 'sh', 'ص': 's', 'ض': 'd', 'ط': 't', 'ظ': 'z', 'ع': 'a',
+  'غ': 'gh', 'ف': 'f', 'ق': 'q', 'ك': 'k', 'ل': 'l', 'م': 'm', 'ن': 'n', 'ه': 'h', 'و': 'w', 'ي': 'y', 'ى': 'a',
+  'ة': 'a', 'ء': '', 'ئ': 'y', 'ؤ': 'w', 'ـ': '', 'پ': 'p', 'چ': 'ch', 'ژ': 'zh', 'گ': 'g', 'ک': 'k', 'ی': 'y',
+};
+
+export function transliterate(text) {
+  return String(text)
+    .replace(/[\u064B-\u0652\u0670]/g, '') // Arabic diacritics
+    .replace(/[\u0660-\u0669]/g, d => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[\u06F0-\u06F9]/g, d => String(d.charCodeAt(0) - 0x06f0))
+    .replace(/[\u0600-\u06FF]/g, c => ARABIC[c] ?? '')
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '');
+}
+
+const NON_LATIN = /[^\p{Script=Latin}\p{N}\p{P}\p{S}\s]/u;
 
 export function normalizeValue(value, rules = DEFAULT_RULES) {
   const parts = splitMacros(String(value ?? '')).filter(p => p.text !== '');
@@ -30,6 +71,7 @@ export function normalizeValue(value, rules = DEFAULT_RULES) {
 
 function normalizeText(text, rules) {
   let t = text;
+  if (rules.nonLatin === 'transliterate') t = transliterate(t);
   if (rules.lowercase) t = t.toLowerCase();
   if (rules.spaceReplacement) t = t.replace(/\s+/g, rules.spaceReplacement);
   if (rules.stripSpecial) t = t.replace(/[^\p{L}\p{N}\-_.~+|:]/gu, '');
@@ -65,9 +107,24 @@ export function validate(values, workspace, destination) {
     issues.push({ field: 'medium', level: 'error', message: `"${v.medium}" is not an approved medium for ${workspace.name}` });
   }
 
+  if (rules.campaignRegex && v.campaign) {
+    let re = null;
+    try {
+      re = new RegExp(rules.campaignRegex);
+    } catch {
+      issues.push({ field: 'campaign', level: 'warn', message: 'The campaign pattern in Settings is not a valid regular expression' });
+    }
+    if (re && !re.test(v.campaign)) {
+      issues.push({ field: 'campaign', level: 'error', message: `Campaign doesn't match ${workspace?.name || 'the'} naming pattern ${rules.campaignRegex}` });
+    }
+  }
+
   for (const f of FIELDS) {
     const raw = String(v[f] ?? '');
     if (!raw) continue;
+    if (rules.nonLatin === 'block' && NON_LATIN.test(raw.replace(/\{[^}]*\}|__[A-Z0-9_]+__/g, ''))) {
+      issues.push({ field: f, level: 'error', message: `utm_${f} contains non-Latin characters; this workspace requires Latin only` });
+    }
     if (raw !== normalizeValue(raw, rules)) {
       issues.push({ field: f, level: 'warn', message: `utm_${f} breaks naming rules → "${normalizeValue(raw, rules)}"` });
     }
@@ -98,6 +155,8 @@ export function parseFormula(formula) {
     const token = m[1].trim();
     if (token.toLowerCase().startsWith('date')) {
       parts.push({ type: 'date', fmt: token.split(':')[1] || 'yyyy-mm-dd' });
+    } else if (VARIABLES.includes(token.toLowerCase())) {
+      parts.push({ type: 'var', name: token.toLowerCase() });
     } else {
       const [name, ...opts] = token.split('|');
       parts.push({ type: 'field', name: name.trim(), options: opts.join('|').split(',').map(s => s.trim()).filter(Boolean) });
@@ -112,12 +171,13 @@ export function formulaFields(formula) {
   return parseFormula(formula).filter(p => p.type === 'field');
 }
 
-export function assembleFormula(formula, inputs, rules = DEFAULT_RULES, now = new Date()) {
+export function assembleFormula(formula, inputs, rules = DEFAULT_RULES, now = new Date(), ctx = {}) {
   // Empty fields drop out together with the separator before them (or after,
   // when the field leads), so "[a]_[b]_[c]" with b empty gives "a_c".
   const parts = parseFormula(formula).map(p => {
     if (p.type === 'literal') return { ...p, value: p.text };
     if (p.type === 'date') return { ...p, value: formatDate(now, p.fmt) };
+    if (p.type === 'var') return { ...p, value: normalizeValue(ctx[p.name] ?? '', rules) };
     return { ...p, value: normalizeValue(inputs?.[p.name] ?? '', rules) };
   });
   const out = [];

@@ -15,13 +15,19 @@ export function defaultWorkspace(name = 'My workspace') {
     id: uid(),
     name,
     rules: { ...DEFAULT_RULES },
-    sources: ['google', 'facebook', 'instagram', 'linkedin', 'tiktok', 'youtube', 'bing', 'newsletter', 'twitter'],
+    sources: ['google', 'facebook', 'instagram', 'linkedin', 'tiktok', 'snapchat', 'youtube', 'bing', 'newsletter', 'twitter'],
     mediums: ['cpc', 'paid_social', 'display', 'email', 'social', 'referral', 'affiliate', 'sms', 'video'],
     domains: [],
     campaignFormula: '',
     presets: [],
     extraParams: [],
     shortener: { provider: 'none', token: '', domain: '' },
+    labels: {}, // display names: { facebook: 'Meta – Facebook' }
+    showGa4Fields: false,
+    adobe: { enabled: false, param: 'cid', delimiter: ':' },
+    qr: { fg: '#000000', bg: '#ffffff', dots: 'square', logo: '', caption: '' },
+    webhook: { url: '', format: 'json' },
+    lock: null, // { salt, hash } — admin PIN
   };
 }
 
@@ -34,11 +40,21 @@ export async function loadState() {
     workspaces = [defaultWorkspace()];
     await area().set({ workspaces, activeWorkspaceId: workspaces[0].id });
   }
+  // Fill in fields added in later versions without touching saved values.
+  workspaces = workspaces.map(w => ({ ...defaultWorkspace(), ...w, rules: { ...DEFAULT_RULES, ...(w.rules || {}) } }));
   const activeWorkspaceId = workspaces.some(w => w.id === data.activeWorkspaceId) ? data.activeWorkspaceId : workspaces[0].id;
   return {
     workspaces,
     activeWorkspaceId,
-    settings: { stripTracking: true, autoCopy: false, linkCheck: false, ...(data.settings || {}) },
+    settings: {
+      stripTracking: true,
+      linkCheck: false,
+      theme: 'system',
+      userName: '',
+      showBuiltins: true,
+      followTab: false,
+      ...(data.settings || {}),
+    },
   };
 }
 
@@ -107,4 +123,36 @@ export async function takePending() {
   const { pending } = await chrome.storage.session.get('pending');
   if (pending) await chrome.storage.session.remove('pending');
   return pending || null;
+}
+
+// Tags last used per site, so revisiting a page restores them.
+export async function rememberHost(workspaceId, host, entry) {
+  if (!host) return;
+  const { memory = {} } = await area().get('memory');
+  const ws = memory[workspaceId] || {};
+  ws[host] = { ...entry, at: Date.now() };
+  // Keep the 300 most recent hosts per workspace.
+  const keys = Object.keys(ws).sort((a, b) => ws[b].at - ws[a].at);
+  for (const k of keys.slice(300)) delete ws[k];
+  memory[workspaceId] = ws;
+  await area().set({ memory });
+}
+
+export async function recallHost(workspaceId, host) {
+  const { memory = {} } = await area().get('memory');
+  return memory[workspaceId]?.[host] || null;
+}
+
+export const ACTIVITY_LIMIT = 3000;
+
+// Local activity log: who did what, per device. Exportable for audits.
+export async function logActivity(type, detail = {}) {
+  const { activity = [], settings = {} } = await area().get(['activity', 'settings']);
+  activity.unshift({ id: uid(), at: Date.now(), type, user: settings.userName || '', ...detail });
+  await area().set({ activity: activity.slice(0, ACTIVITY_LIMIT) });
+}
+
+export async function getActivity() {
+  const { activity = [] } = await area().get('activity');
+  return activity;
 }

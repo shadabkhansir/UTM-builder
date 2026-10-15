@@ -11,9 +11,13 @@ export const COLUMNS = [
   ['term', 'Term'],
   ['content', 'Content'],
   ['utmId', 'utm_id'],
+  ['source_platform', 'utm_source_platform'],
+  ['creative_format', 'utm_creative_format'],
+  ['marketing_tactic', 'utm_marketing_tactic'],
   ['channel', 'GA4 Channel'],
   ['url', 'Tagged URL'],
   ['shortUrl', 'Short URL'],
+  ['createdBy', 'Created by'],
 ];
 
 function cell(v) {

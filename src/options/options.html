@@ -10,20 +10,33 @@
 <body class="side">
   <div class="wrap">
     <h1>UTM Governor settings</h1>
+    <nav class="toc" aria-label="Sections">
+      <a href="#s-ws">Workspaces</a><a href="#s-rules">Naming rules</a><a href="#s-values">Approved values</a><a href="#s-formula">Campaign formula</a>
+      <a href="#s-presets">Presets &amp; import</a><a href="#s-requests">Approvals</a><a href="#s-short">Shortener</a><a href="#s-qr">QR codes</a>
+      <a href="#s-hook">Webhook &amp; Sheets</a><a href="#s-adobe">Adobe</a><a href="#s-lock">Admin lock</a><a href="#s-share">Share</a>
+      <a href="#s-general">General</a><a href="#s-log">Activity log</a>
+    </nav>
 
-    <section class="card">
+    <section class="card" id="s-ws">
       <h2>Workspaces</h2>
-      <p class="hint">One workspace per client or brand. Each has its own approved values, naming rules, domains, presets and shortener.</p>
+      <p class="hint">One workspace per client or brand. Each has its own approved values, naming rules, domains, presets, shortener and webhook.</p>
       <div class="row">
         <select id="wsSelect" aria-label="Workspace to edit"></select>
         <button id="wsAdd">+ New</button>
         <button id="wsDup">Duplicate</button>
         <button id="wsDel" class="ghost">Delete</button>
       </div>
-      <div class="field"><label for="wsName">Name</label><input id="wsName"></div>
+      <div id="lockBanner" class="banner" hidden>
+        <span>🔒 Rules for this workspace are locked by an admin.</span>
+        <input id="unlockPin" type="password" inputmode="numeric" placeholder="Admin PIN" aria-label="Admin PIN">
+        <button id="unlockBtn">Unlock</button>
+      </div>
+      <fieldset class="lockable plain">
+        <div class="field"><label for="wsName">Name</label><input id="wsName"></div>
+      </fieldset>
     </section>
 
-    <section class="card">
+    <fieldset class="card lockable" id="s-rules">
       <h2>Naming rules</h2>
       <label class="check"><input type="checkbox" id="rLower"> Force lowercase (Facebook → facebook)</label>
       <div class="row">
@@ -36,23 +49,37 @@
         </select>
       </div>
       <label class="check"><input type="checkbox" id="rStrip"> Strip special characters (keeps letters, numbers, - _ . ~ + | :)</label>
+      <div class="row">
+        <label for="rNonLatin">Non-Latin text (e.g. Arabic)</label>
+        <select id="rNonLatin">
+          <option value="allow">Allow as typed</option>
+          <option value="transliterate">Transliterate to Latin (عرض → ard, é → e)</option>
+          <option value="block">Block — Latin only</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="rRegex">Campaign must match this pattern (regular expression, optional)</label>
+        <input id="rRegex" spellcheck="false" placeholder="^\d{4}-\d{2}_[a-z0-9-]+$">
+        <div id="regexHint" class="hint"></div>
+      </div>
       <div class="field">
         <span class="lbl">Required fields</span>
         <div class="row" id="rRequired"></div>
       </div>
-    </section>
+    </fieldset>
 
-    <section class="card">
+    <fieldset class="card lockable" id="s-values">
       <h2>Approved values</h2>
+      <p class="hint">One per line. Add a display name with <code>value = Name</code>, e.g. <code>facebook = Meta – Facebook</code>. The value goes in the URL; the name is what people see.</p>
       <div class="grid">
         <div class="field">
-          <label for="wsSources">Sources (one per line)</label>
-          <textarea id="wsSources" rows="7" spellcheck="false"></textarea>
+          <label for="wsSources">Sources</label>
+          <textarea id="wsSources" rows="8" spellcheck="false"></textarea>
           <label class="check"><input type="checkbox" id="rLockSources"> Lock to this list (dropdown only)</label>
         </div>
         <div class="field">
-          <label for="wsMediums">Mediums (one per line)</label>
-          <textarea id="wsMediums" rows="7" spellcheck="false"></textarea>
+          <label for="wsMediums">Mediums</label>
+          <textarea id="wsMediums" rows="8" spellcheck="false"></textarea>
           <label class="check"><input type="checkbox" id="rLockMediums"> Lock to this list (dropdown only)</label>
         </div>
       </div>
@@ -61,30 +88,42 @@
         <label for="wsDomains">Allowed destination domains (one per line, subdomains included; empty = any)</label>
         <textarea id="wsDomains" rows="3" spellcheck="false" placeholder="acme.com"></textarea>
       </div>
-    </section>
+      <label class="check"><input type="checkbox" id="wsGa4Fields"> Show GA4 fields (source platform, creative format, marketing tactic) by default</label>
+    </fieldset>
 
-    <section class="card">
+    <fieldset class="card lockable" id="s-formula">
       <h2>Campaign name formula</h2>
-      <p class="hint">Leave empty for free text. Use <code>[field]</code> for an input, <code>[field|a,b,c]</code> for a dropdown, <code>[date:yyyy-mm]</code> for today (tokens: yyyy yy mm dd ww q).</p>
+      <p class="hint">Leave empty for free text. <code>[field]</code> is an input, <code>[field|a,b,c]</code> a dropdown, <code>[date:yyyy-mm]</code> today's date (tokens yyyy yy mm dd ww q). Variables: <code>[page_title]</code> <code>[domain]</code> <code>[path]</code> <code>[client]</code> <code>[user]</code>. Variables also work in any field in the builder.</p>
       <input id="wsFormula" spellcheck="false" placeholder="[date:yyyy-mm]_[product]_[region|uae,ksa,kw]_[objective|awareness,traffic,conversions]">
       <div id="formulaPreview" class="hint"></div>
-    </section>
-
-    <section class="card">
-      <h2>Default custom parameters</h2>
+      <h3>Default custom parameters</h3>
       <p class="hint">Added to every link in this workspace, e.g. <code>ref=partner</code>. One <code>key=value</code> per line.</p>
       <textarea id="wsExtras" rows="2" spellcheck="false"></textarea>
-    </section>
+    </fieldset>
 
-    <section class="card">
+    <section class="card" id="s-presets">
       <h2>Presets</h2>
+      <p class="hint">Save presets from the Build tab. Give them a folder to group them in the preset menu.</p>
       <ul id="presetList" class="plist"></ul>
-      <p class="hint">Save presets from the Build tab.</p>
+      <h3>Import presets from another tool</h3>
+      <p class="hint">CSV or JSON exported from another UTM builder or a spreadsheet. Columns or keys like name, folder, source, medium, campaign, content, term are recognised. Every value is cleaned with this workspace's naming rules.</p>
+      <input type="file" id="pImportFile" accept=".csv,.json,.txt,application/json,text/csv" aria-label="Preset file">
+      <textarea id="pImportText" rows="3" spellcheck="false" placeholder="name,folder,source,medium,campaign&#10;Facebook prospecting,Acme,facebook,paid_social,"></textarea>
+      <label class="check"><input type="checkbox" id="pImportLists" checked> Also add new sources and mediums to the approved lists</label>
+      <div class="row"><button id="pImportGo">Import presets</button><span id="pImportStatus" class="hint"></span></div>
     </section>
 
-    <section class="card">
+    <fieldset class="card lockable" id="s-requests">
+      <h2>Approval requests</h2>
+      <p class="hint">When a list is locked, teammates can request a new value from the builder. Paste their request here to review and approve it.</p>
+      <textarea id="reqIn" rows="2" spellcheck="false" placeholder="UTMG-REQ1.…"></textarea>
+      <div class="row"><button id="reqCheck">Review request</button><span id="reqStatus" class="hint"></span></div>
+      <div class="row" id="reqActions" hidden><button id="reqApprove" class="primary">Approve and add</button><button id="reqReject" class="ghost">Dismiss</button></div>
+    </fieldset>
+
+    <section class="card" id="s-short">
       <h2>Link shortener (bring your own key)</h2>
-      <p class="hint">Your key is stored only in this browser and sent only to the provider.</p>
+      <p class="hint">Your key is stored only in this browser and sent only to the provider. Custom endings and click counts use the provider's API; Bitly custom endings need a paid Bitly plan.</p>
       <div class="grid">
         <div class="field">
           <label for="shProvider">Provider</label>
@@ -104,22 +143,117 @@
       <div class="row"><button id="shGrant">Allow access to provider</button><button id="shTest">Test</button><span id="shStatus" class="hint"></span></div>
     </section>
 
-    <section class="card">
-      <h2>General</h2>
-      <label class="check"><input type="checkbox" id="sStrip"> Strip click IDs (fbclid, gclid, msclkid, _gl …) from destination URLs</label>
-      <label class="check"><input type="checkbox" id="sLink"> Live link checks — detect 404s and redirects that drop UTMs</label>
-      <p class="hint">Live checks need permission to request any site. They send a HEAD request (no cookies) to the destination only.</p>
+    <section class="card" id="s-qr">
+      <h2>QR codes</h2>
+      <p class="hint">Defaults for this workspace. You can still change colours and caption per code in the builder.</p>
+      <div class="row">
+        <label class="small">Colour <input type="color" id="qFg"></label>
+        <label class="small">Background <input type="color" id="qBg"></label>
+        <select id="qDots" aria-label="Dot style"><option value="square">Square dots</option><option value="round">Round dots</option></select>
+      </div>
+      <div class="field"><label for="qCaption">Default caption</label><input id="qCaption" placeholder="Scan to shop"></div>
+      <div class="row">
+        <label class="btn">Upload logo… <input type="file" id="qLogo" accept="image/png,image/jpeg,image/svg+xml,image/webp" hidden></label>
+        <img id="qLogoPreview" alt="" hidden>
+        <button id="qLogoRemove" class="ghost" hidden>Remove logo</button>
+        <span id="qStatus" class="hint"></span>
+      </div>
     </section>
 
-    <section class="card">
+    <section class="card" id="s-hook">
+      <h2>Webhook &amp; Google Sheets</h2>
+      <p class="hint">Every link you copy or shorten in this workspace is sent here. Works with Zapier, Make, Slack incoming webhooks, or a Google Sheet via Apps Script.</p>
+      <div class="grid">
+        <div class="field"><label for="whUrl">Webhook URL (https)</label><input id="whUrl" spellcheck="false" placeholder="https://hooks.zapier.com/…"></div>
+        <div class="field">
+          <label for="whFormat">Format</label>
+          <select id="whFormat">
+            <option value="json">JSON (Zapier, Make, n8n)</option>
+            <option value="sheets">Google Sheets (Apps Script)</option>
+            <option value="slack">Slack message</option>
+          </select>
+        </div>
+      </div>
+      <div class="row"><button id="whGrant">Allow this webhook</button><button id="whTest">Send test</button><span id="whStatus" class="hint"></span></div>
+      <details>
+        <summary>Set up a Google Sheet (2 minutes)</summary>
+        <ol class="steps">
+          <li>Open your tracking sheet → Extensions → Apps Script.</li>
+          <li>Replace the code with the script below and save.</li>
+          <li>Deploy → New deployment → Web app. Execute as: Me. Who has access: Anyone. Copy the web app URL.</li>
+          <li>Paste it above, choose “Google Sheets”, click Allow, then Send test.</li>
+        </ol>
+        <textarea id="appsScript" rows="12" readonly spellcheck="false"></textarea>
+        <button id="copyScript" class="small">Copy script</button>
+      </details>
+    </section>
+
+    <fieldset class="card lockable" id="s-adobe">
+      <h2>Adobe Analytics</h2>
+      <label class="check"><input type="checkbox" id="adEnabled"> Offer an Adobe tracking-code link in “Copy for ad platform”</label>
+      <div class="grid">
+        <div class="field"><label for="adParam">Query parameter</label><input id="adParam" placeholder="cid"></div>
+        <div class="field"><label for="adDelim">Delimiter</label><input id="adDelim" placeholder=":"></div>
+      </div>
+      <p class="hint">The code joins source, medium, campaign, content and term, e.g. <code>cid=facebook:paid_social:winter-boots</code>.</p>
+    </fieldset>
+
+    <section class="card" id="s-lock">
+      <h2>Admin lock</h2>
+      <p class="hint">Set a PIN to lock this workspace's rules, approved values, formula and presets. Teammates who import it can build links but can't change the rules. This prevents accidental changes; it is not a security control.</p>
+      <div class="row" id="lockSet">
+        <input id="lockPin" type="password" inputmode="numeric" placeholder="New PIN (4+ digits)" aria-label="New PIN">
+        <button id="lockBtn">Lock workspace</button>
+      </div>
+      <div class="row" id="lockClear" hidden>
+        <span class="hint">Locked. Unlock above to edit, or remove the lock.</span>
+        <button id="lockRemove" class="ghost">Remove lock</button>
+      </div>
+    </section>
+
+    <section class="card" id="s-share">
       <h2>Share with your team</h2>
-      <p class="hint">Export this workspace (rules, values, presets — never the API key) and send the file to teammates to import.</p>
+      <p class="hint">A workspace code holds the rules, values, presets and lock — never API keys or webhook URLs. Send it in Slack or show the QR; teammates paste it below.</p>
+      <div class="row"><button id="codeMake">Create workspace code</button><button id="codeCopy" disabled>Copy code</button></div>
+      <textarea id="codeOut" rows="3" readonly spellcheck="false" hidden></textarea>
+      <canvas id="codeQr" width="220" height="220" hidden></canvas>
+      <div class="field">
+        <label for="codeIn">Import a workspace code</label>
+        <textarea id="codeIn" rows="2" spellcheck="false" placeholder="UTMG1.…"></textarea>
+      </div>
+      <div class="row"><button id="codeImport">Import code</button><span id="codeStatus" class="hint"></span></div>
+      <h3>Files</h3>
       <div class="row">
         <button id="exWs">Export workspace</button>
         <button id="exAll">Export everything</button>
-        <label class="btn">Import… <input type="file" id="imFile" accept="application/json" hidden></label>
+        <label class="btn">Import file… <input type="file" id="imFile" accept="application/json" hidden></label>
         <span id="imStatus" class="hint"></span>
       </div>
+    </section>
+
+    <section class="card" id="s-general">
+      <h2>General</h2>
+      <div class="grid">
+        <div class="field"><label for="sUser">Your name (shown in history, activity log and webhooks)</label><input id="sUser" placeholder="Sara K."></div>
+        <div class="field">
+          <label for="sTheme">Theme</label>
+          <select id="sTheme"><option value="system">Match system</option><option value="light">Light</option><option value="dark">Dark</option></select>
+        </div>
+      </div>
+      <label class="check"><input type="checkbox" id="sBuiltins"> Show built-in templates (Google Ads, Meta, TikTok, LinkedIn…) in the preset menu</label>
+      <label class="check"><input type="checkbox" id="sStrip"> Strip click IDs (fbclid, gclid, msclkid, _gl …) from destination URLs</label>
+      <label class="check"><input type="checkbox" id="sLink"> Live link checks — detect 404s, redirects that drop UTMs, and test landing pages</label>
+      <p class="hint">Live checks need permission to request any site. Link checks send a HEAD request without cookies; landing tests open the page in a background tab and close it.</p>
+      <label class="check"><input type="checkbox" id="sFollow"> Side panel follows the tab you're on</label>
+      <p class="hint">Needs permission to read your tabs' addresses, so the side panel can update when you switch pages.</p>
+      <p class="hint">Keyboard: <kbd>Alt</kbd>+<kbd>U</kbd> opens the builder · <kbd>Ctrl/⌘</kbd>+<kbd>Enter</kbd> copies the URL · add <kbd>Shift</kbd> to copy parameters only.</p>
+    </section>
+
+    <section class="card" id="s-log">
+      <h2>Activity log</h2>
+      <p class="hint">What happened on this device: links created, rules changed, imports, approvals. Export it for audits.</p>
+      <div class="row"><button id="logCsv">Export CSV</button><label class="check"><input type="checkbox" id="logAll"> All workspaces</label></div>
+      <div class="tablewrap"><table id="logTable"></table></div>
     </section>
 
     <div id="toast" class="toast" role="status" hidden></div>

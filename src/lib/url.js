@@ -2,7 +2,11 @@
 // params are kept byte-for-byte, the #fragment stays last, stray click IDs and
 // old UTMs are stripped, and ad-platform macros are left unencoded.
 
-export const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'utm_id'];
+export const UTM_KEYS = [
+  'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'utm_id',
+  // GA4 campaign dimensions: Session source platform / creative format / marketing tactic
+  'utm_source_platform', 'utm_creative_format', 'utm_marketing_tactic',
+];
 
 // Click IDs and tracking junk that should never be baked into a shared link.
 export const TRACKING_PARAMS = new Set([

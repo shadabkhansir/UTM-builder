@@ -12,6 +12,7 @@
     <nav class="tabs" role="tablist">
       <button role="tab" data-tab="build" aria-selected="true">Build</button>
       <button role="tab" data-tab="bulk">Bulk</button>
+      <button role="tab" data-tab="audit">Audit</button>
       <button role="tab" data-tab="history">History</button>
     </nav>
     <button id="dock" class="icon" title="Open in side panel (stays open while you work)" aria-label="Open in side panel">⇥</button>
@@ -25,12 +26,14 @@
       <div class="row">
         <input id="url" type="url" placeholder="https://example.com/landing" autocomplete="off" spellcheck="false">
         <button id="useTab" class="icon" title="Use current tab URL" aria-label="Use current tab">⟲</button>
+        <button id="openUrl" class="icon" title="Open the tagged link in a new tab" aria-label="Open tagged link">↗</button>
       </div>
       <div id="urlStatus" class="hint"></div>
+      <div id="memoryHint" class="hint"></div>
     </div>
 
     <div class="row presets">
-      <select id="preset" aria-label="Preset"><option value="">Apply preset…</option></select>
+      <select id="preset" aria-label="Preset"><option value="">Apply preset or template…</option></select>
       <button id="savePreset" class="ghost" title="Save current fields as a preset">Save preset</button>
     </div>
 
@@ -48,6 +51,15 @@
         <datalist id="dl-medium"></datalist>
       </div>
     </div>
+    <div id="requestBox" class="request" hidden>
+      <button id="requestBtn" class="linkish">Need a value that isn't on the approved list?</button>
+      <div id="requestForm" class="row" hidden>
+        <select id="reqField" aria-label="Field"><option value="medium">medium</option><option value="source">source</option></select>
+        <input id="reqValue" placeholder="new value" spellcheck="false" aria-label="Requested value">
+        <input id="reqReason" placeholder="why (optional)" aria-label="Reason">
+        <button id="reqCopy" class="small">Copy request</button>
+      </div>
+    </div>
 
     <div id="ga4" class="ga4 idle" aria-live="polite">
       <span class="pill" id="ga4Pill">GA4 channel: —</span>
@@ -62,26 +74,52 @@
 
     <div class="grid">
       <div class="field" data-f="content">
-        <label for="f-content">Content</label>
+        <label for="f-content">Content <span class="req" hidden>*</span></label>
         <input id="f-content" autocomplete="off" spellcheck="false" placeholder="carousel_a">
       </div>
       <div class="field" data-f="term">
-        <label for="f-term">Term</label>
+        <label for="f-term">Term <span class="req" hidden>*</span></label>
         <input id="f-term" autocomplete="off" spellcheck="false" placeholder="{keyword}">
       </div>
     </div>
 
     <details id="more">
-      <summary>utm_id, custom params & ad macros</summary>
+      <summary>utm_id, GA4 fields, variables, custom params &amp; ad macros</summary>
       <div class="field" data-f="id">
-        <label for="f-id">utm_id (campaign ID, for GA4 cost import)</label>
+        <label for="f-id">utm_id (campaign ID, for GA4 cost import) <span class="req" hidden>*</span></label>
         <input id="f-id" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="grid3">
+        <div class="field" data-f="source_platform">
+          <label for="f-source_platform">Source platform</label>
+          <input id="f-source_platform" list="dl-sp" autocomplete="off" spellcheck="false" placeholder="google_ads">
+        </div>
+        <div class="field" data-f="creative_format">
+          <label for="f-creative_format">Creative format</label>
+          <input id="f-creative_format" list="dl-cf" autocomplete="off" spellcheck="false" placeholder="video">
+        </div>
+        <div class="field" data-f="marketing_tactic">
+          <label for="f-marketing_tactic">Marketing tactic</label>
+          <input id="f-marketing_tactic" list="dl-mt" autocomplete="off" spellcheck="false" placeholder="prospecting">
+        </div>
+      </div>
+      <datalist id="dl-sp"><option value="google_ads"><option value="meta_ads"><option value="tiktok_ads"><option value="linkedin_ads"><option value="microsoft_ads"><option value="snapchat_ads"><option value="x_ads"><option value="dv360"><option value="sa360"><option value="cm360"></datalist>
+      <datalist id="dl-cf"><option value="image"><option value="video"><option value="carousel"><option value="text"><option value="native"><option value="display"><option value="audio"><option value="story"></datalist>
+      <datalist id="dl-mt"><option value="prospecting"><option value="remarketing"><option value="retention"><option value="brand"><option value="non_brand"><option value="cross_sell"><option value="upsell"></datalist>
+      <div class="chips" aria-label="Variables">
+        <span class="hint">Variables:</span>
+        <button data-var="[page_title]" title="Title of the page">[page_title]</button>
+        <button data-var="[domain]" title="Destination domain">[domain]</button>
+        <button data-var="[path]" title="Destination path">[path]</button>
+        <button data-var="[client]" title="Workspace name">[client]</button>
+        <button data-var="[user]" title="Your name from Settings">[user]</button>
+        <button data-var="[date:yyyy-mm]" title="Today's date">[date:yyyy-mm]</button>
       </div>
       <div id="extras"></div>
       <button id="addExtra" class="ghost small">+ Custom parameter</button>
       <div class="macros">
         <div class="row">
-          <label for="macroPlatform">Insert dynamic macro into last field:</label>
+          <label for="macroPlatform">Insert ad macro into last field:</label>
           <select id="macroPlatform"></select>
         </div>
         <div id="macroChips" class="chips"></div>
@@ -94,25 +132,43 @@
       <textarea id="out" readonly rows="3" placeholder="Your tagged URL appears here" aria-label="Tagged URL"></textarea>
       <div id="removed" class="hint"></div>
       <div class="copy">
-        <button id="copyUrl" class="primary">Copy URL</button>
-        <button id="copyQuery" title="utm_source=…&… only — for Meta 'URL parameters' and Google Ads final URL suffix">Params only</button>
+        <button id="copyUrl" class="primary" title="Ctrl/⌘ + Enter">Copy URL</button>
+        <button id="copyQuery" title="utm_source=…&amp;… only (Ctrl/⌘ + Shift + Enter)">Params only</button>
         <button id="copyRow" title="Paste into Google Sheets/Excel to fill a whole row">Sheet row</button>
         <button id="copyMd">Markdown</button>
         <button id="copyHtml">HTML</button>
       </div>
+      <div class="row platform">
+        <select id="platform" aria-label="Copy for ad platform"></select>
+        <button id="copyPlatform">Copy</button>
+      </div>
+      <div id="platformHint" class="hint"></div>
       <div class="copy">
+        <input id="slug" placeholder="custom ending (optional)" spellcheck="false" aria-label="Custom short link ending">
         <button id="shorten">Shorten</button>
         <button id="qrBtn">QR code</button>
-        <button id="checkBtn">Check link</button>
+      </div>
+      <div class="copy">
+        <button id="checkBtn" title="Status code and redirects">Check link</button>
+        <button id="landingBtn" title="Open in a background tab and check UTMs survive and GA4 is present">Test landing</button>
         <button id="reset" class="ghost">Clear</button>
       </div>
       <div id="short" class="hint"></div>
       <div id="qr" class="qr" hidden>
         <canvas id="qrCanvas" width="240" height="240"></canvas>
+        <div class="row qrstyle">
+          <label class="small">Colour <input type="color" id="qrFg" value="#000000"></label>
+          <label class="small">Background <input type="color" id="qrBg" value="#ffffff"></label>
+          <select id="qrDots" aria-label="Dot style"><option value="square">Square dots</option><option value="round">Round dots</option></select>
+        </div>
+        <div class="row qrstyle">
+          <input id="qrCaption" placeholder="Caption, e.g. Scan for 20% off" aria-label="QR caption">
+          <label class="small"><input type="checkbox" id="qrShort"> short link</label>
+          <label class="small"><input type="checkbox" id="qrLogo"> logo</label>
+        </div>
         <div class="row">
           <button id="qrPng" class="small">Download PNG</button>
           <button id="qrSvg" class="small">Download SVG</button>
-          <label class="small"><input type="checkbox" id="qrShort"> encode short link</label>
         </div>
       </div>
     </div>
@@ -120,8 +176,13 @@
 
   <!-- BULK -->
   <main id="tab-bulk" class="tab" hidden>
-    <section>
-      <h2>Matrix builder</h2>
+    <nav class="subtabs" role="tablist">
+      <button data-sub="matrix" aria-selected="true">Matrix</button>
+      <button data-sub="csv">CSV upload</button>
+      <button data-sub="email">Email HTML</button>
+      <button data-sub="cleaner">UTM Cleaner</button>
+    </nav>
+    <section data-subpanel="matrix">
       <p class="hint">One value per line (or comma-separated). Every combination becomes a link.</p>
       <div class="field"><label for="b-urls">Landing pages</label><textarea id="b-urls" rows="3" spellcheck="false"></textarea></div>
       <div class="grid">
@@ -132,28 +193,60 @@
         <div class="field"><label for="b-campaign">Campaigns</label><textarea id="b-campaign" rows="2" spellcheck="false"></textarea></div>
         <div class="field"><label for="b-content">Content (optional)</label><textarea id="b-content" rows="2" spellcheck="false"></textarea></div>
       </div>
-      <div class="row">
-        <button id="b-go" class="primary">Generate</button>
-        <span id="b-count" class="hint"></span>
-      </div>
-      <div id="b-result" hidden>
-        <div class="row">
-          <button id="b-copy">Copy for Sheets</button>
-          <button id="b-csv">Download CSV</button>
-          <button id="b-save" class="ghost">Save to history</button>
-        </div>
-        <div class="tablewrap"><table id="b-table"></table></div>
-      </div>
+      <div class="row"><button id="b-go" class="primary">Generate</button></div>
     </section>
-    <section>
-      <h2>Tag every link in email HTML</h2>
-      <p class="hint">Uses source/medium/campaign from the Build tab. Only tags links on this workspace's domains (if set). Skips mailto:, anchors and ESP merge tags.</p>
-      <textarea id="h-in" rows="5" spellcheck="false" placeholder="Paste email HTML…"></textarea>
+    <section data-subpanel="csv" hidden>
+      <p class="hint">Upload or paste a sheet with columns like URL, source, medium, campaign, content, term. Header names are matched automatically; without headers the order is URL, source, medium, campaign, content, term.</p>
+      <input type="file" id="c-file" accept=".csv,.tsv,.txt,text/csv" aria-label="CSV file">
+      <textarea id="c-in" rows="5" spellcheck="false" placeholder="url,source,medium,campaign&#10;https://acme.com/boots,facebook,paid_social,winter-boots"></textarea>
+      <div class="row"><button id="c-go" class="primary">Build links</button></div>
+    </section>
+    <section data-subpanel="email" hidden>
+      <p class="hint">Uses source, medium and campaign from the Build tab. Only tags links on this workspace's domains (if set). Skips mailto:, anchors and ESP merge tags.</p>
+      <textarea id="h-in" rows="6" spellcheck="false" placeholder="Paste email HTML…"></textarea>
       <div class="row">
         <button id="h-go" class="primary">Tag links</button>
         <button id="h-copy" disabled>Copy HTML</button>
         <span id="h-count" class="hint"></span>
       </div>
+    </section>
+    <section data-subpanel="cleaner" hidden>
+      <p class="hint">Paste tagged links from anywhere. They're normalised to this workspace's rules, click IDs are removed, duplicates are dropped, and each gets a GA4 verdict.</p>
+      <textarea id="k-in" rows="6" spellcheck="false" placeholder="https://acme.com/?utm_source=Facebook&amp;utm_medium=CPC&amp;fbclid=…"></textarea>
+      <div class="row"><button id="k-go" class="primary">Clean links</button></div>
+    </section>
+    <div id="b-result" hidden>
+      <div class="row">
+        <span id="b-count" class="hint"></span>
+      </div>
+      <div class="row">
+        <button id="b-copy">Copy for Sheets</button>
+        <button id="b-copyUrls">Copy URLs</button>
+        <button id="b-csv">Download CSV</button>
+        <button id="b-save" class="ghost">Save to history</button>
+      </div>
+      <div class="tablewrap"><table id="b-table"></table></div>
+    </div>
+  </main>
+
+  <!-- AUDIT -->
+  <main id="tab-audit" class="tab" hidden>
+    <section>
+      <h2>Check links on this page</h2>
+      <p class="hint">Finds every tagged link on the open page and grades it against GA4 and this workspace's rules.</p>
+      <div class="row"><button id="a-scan" class="primary">Scan this page</button><span id="a-scanCount" class="hint"></span></div>
+      <ul id="a-scanList" class="lint"></ul>
+    </section>
+    <section>
+      <h2>GA4 report audit</h2>
+      <p class="hint">In GA4 open Reports → Acquisition → Traffic acquisition, set the dimension to <b>Session source / medium</b>, then Share → Download CSV. Upload it here to see what lands in Unassigned or the wrong channel.</p>
+      <input type="file" id="g-file" accept=".csv,text/csv" aria-label="GA4 CSV export">
+      <div id="g-summary" class="hint"></div>
+      <div class="row" id="g-actions" hidden>
+        <button id="g-adopt">Add clean values to approved lists</button>
+        <button id="g-copy">Copy table</button>
+      </div>
+      <div class="tablewrap" id="g-wrap" hidden><table id="g-table"></table></div>
     </section>
   </main>
 

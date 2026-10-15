@@ -43,7 +43,7 @@ test('tsv and csv exports', () => {
   const link = { createdAt: Date.UTC(2026, 9, 14), destination: 'https://a.com', source: 'fb', medium: 'cpc', campaign: '=cmd', url: 'https://a.com/?x' };
   const tsv = toTsv([link]);
   assert.equal(tsv.split('\n').length, 2);
-  assert.equal(tsv.split('\n')[1].split('\t').length, 12);
+  assert.equal(tsv.split('\n')[1].split('\t').length, 16);
   assert.match(toCsv([link]), /'=cmd/);
 });
 
