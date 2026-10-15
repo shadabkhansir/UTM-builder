@@ -1,9 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "UTM Governor — GA4-safe UTM Builder",
+  "name": "UTM Governor by The Growth Folks®",
   "short_name": "UTM Governor",
   "version": "0.2.0",
-  "description": "Build GA4-safe UTM links in one click: live channel prediction, naming rules, client workspaces, bulk matrix, QR codes.",
+  "homepage_url": "https://thegrowthfolks.com/tools/utm-builder",
+  "description": "GA4-safe UTM links in one click: channel prediction, naming rules, client workspaces, bulk matrix, QR. By The Growth Folks®",
   "minimum_chrome_version": "116",
   "icons": {
     "16": "icons/icon16.png",

@@ -25,3 +25,5 @@ label.btn { border: 1px solid var(--border); border-radius: var(--radius); backg
 #codeQr { background: #fff; border-radius: 6px; align-self: flex-start; }
 #logTable td { font-size: 11px; }
 input[type="color"] { padding: 0; width: 28px; height: 22px; vertical-align: middle; }
+.opt-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.wrap > .tgf { border: 0; padding: 4px 2px; }
