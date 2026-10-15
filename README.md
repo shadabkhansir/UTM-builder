@@ -1,6 +1,6 @@
-# UTM Governor — GA4-safe UTM builder & link governance (Chrome MV3)
+# UTM Governor by The Growth Folks® — GA4-safe UTM builder & link governance (Chrome MV3)
 
-Local-first Chrome extension for growth marketers and agencies. Builds UTM links in one click and **tells you which GA4 channel each link will land in before you ship it**.
+Local-first Chrome extension for growth marketers and agencies, published by The Growth Folks® (https://thegrowthfolks.com/tools/utm-builder). It is the Chrome-extension form of the free web UTM builder on that page. Builds UTM links in one click and **tells you which GA4 channel each link will land in before you ship it**.
 
 ## Install (dev)
 1. `chrome://extensions` → enable Developer mode → **Load unpacked** → select this folder.
@@ -8,6 +8,12 @@ Local-first Chrome extension for growth marketers and agencies. Builds UTM links
 3. Right-click any link or page → **Build UTM link for this link/page**.
 
 `npm test` runs the engine unit tests (Node 20+, no dependencies). `npm run package` builds `dist/utm-governor.zip` for the Web Store.
+
+## Branding & store assets (v0.2)
+- Popup, side panel and options page carry a small "by The Growth Folks®" mark plus Help / Privacy / Contact / Learn links (all with `utm_source=chrome-extension&utm_medium=referral&utm_campaign=utm-builder`).
+- On first install (not on update) the service worker opens `https://thegrowthfolks.com/tools/utm-builder/welcome` via `chrome.tabs.create` (no `tabs` permission needed).
+- Exports (CSV / Sheets rows / QR / workspace JSON) are plain data with no header or footer, so no credit line is added to them.
+- `store/STORE_LISTING.md` has the Chrome Web Store copy, permission justifications and data-usage answers. `node store/make-graphics.mjs` regenerates the promo tile, marquee and 1280×800 screenshots in `store/` from the real UI (Playwright + a `chrome.*` stub).
 
 ## What's built (v0.1, free tier — zero server cost)
 | Feature | Notes |

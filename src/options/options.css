@@ -10,3 +10,5 @@ code { background: var(--panel); padding: 0 3px; border-radius: 3px; }
 .plist li { display: flex; justify-content: space-between; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; }
 .plist .vals { font-family: ui-monospace, monospace; font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 label.btn { border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel); padding: 5px 7px; cursor: pointer; color: var(--text); font-size: 13px; }
+.opt-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.wrap > .tgf { border: 0; padding: 4px 2px; }
