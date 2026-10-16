@@ -19,56 +19,58 @@ Build and check UTM links for GA4. See the channel before you share. Page and em
 **Screenshots** (1280×800, in `store/screenshots/`, alt text in `store/screenshots/alt-text.json`). The Chrome Web Store accepts at most 5, so upload these in this order:
 1. `1-build-ga4-channel.png`
 2. `2-check-page.png`
-3. `3-check-email-draft.png`
+3. `5-team-rules-file.png`
 4. `4-whatsapp-link.png`
 5. `6-bulk-matrix.png`
 
-`5-team-rules-file.png` is used on the website only.
+`3-check-email-draft.png` is used on the website only: its caption lists email tool brand names, which the store's keyword-spam review flags.
 
 **Promo tiles:** `store/promo-small-440x280.png`, `store/marquee-1400x560.png`.
 
 **Detailed description**
 
+Rejected once for keyword spam (2026-10-16): lists of email, ad and tool brand names in the description. Keep third-party brand names out of the description and screenshot captions; describe features generically ("your webmail or email marketing editor").
+
 ```
 Build UTM links that Google Analytics 4 understands, and check the ones you already have, before they go live.
 
-UTM Builder & Checker for GA4 is a free Chrome extension from The Growth Folks®. It shows which GA4 channel every link will land in, and why, using Google's published default channel group rules. It also grades links against your team's naming convention.
+UTM Builder & Checker is a free Chrome extension from The Growth Folks®. It shows which GA4 channel each link will be reported under, and why, using Google's published default channel group rules. It also checks links against your team's naming convention.
 
 WHY IT EXISTS
-One wrong value quietly breaks your reports. "utm_source=meta" isn't on GA4's social list, so paid Meta traffic shows up as Paid Other. Klaviyo's older default "utm_medium=campaign" lands in Unassigned. UTMs placed after a "#" never reach GA4 at all. This extension catches those mistakes and gives you the fixed link.
+One wrong value quietly breaks your reports. A source GA4 doesn't recognise turns paid social traffic into "Paid Other". A medium like "campaign" lands in "Unassigned". UTMs placed after a "#" never reach GA4 at all. This extension catches those mistakes and gives you the corrected link.
 
 BUILD
-• GA4 channel prediction with the reason, including the newer AI Assistant and Paid Other channels, using Google's official source list
+• See the GA4 channel and the rule behind it as you type
 • One-click fixes for Unassigned, Paid Other and paid traffic counted as organic
-• Clean URLs: keeps your parameters and #anchors, strips fbclid, gclid, msclkid, _gl and old UTMs
-• Ad-platform macros for Meta, Google Ads, Microsoft Ads, TikTok and LinkedIn, never encoded
-• Copy as a full URL, parameters only, a Meta "URL parameters" string, a Google Ads final URL suffix or tracking template, a Google Sheets row, Markdown or HTML
-• 16 built-in templates, presets with folders, campaign-name formulas and variables
+• Clean URLs: keeps your parameters and anchors, removes old click IDs and UTMs
+• Dynamic ad-platform macros are kept intact, never encoded
+• Copy as a full URL, parameters only, an ad-platform suffix, a spreadsheet row, Markdown or HTML
+• Built-in templates, saved presets and campaign-name formulas
 
-CHECK (UTM checker)
-• This page: grade every link on the open page, then locate any link with one click
-• Email draft: check the links in a draft in Gmail, Outlook on the web, HubSpot, Mailchimp or Klaviyo before you send. It reads links only when you click, and nothing leaves your browser
-• Paste: check a list of links or a whole email's HTML, then copy the fixed HTML
-• Checks for missing UTMs, UTMs after #, a second "?", encoded macros, double encoding, case and spacing problems, duplicates, click IDs, your naming rules and the GA4 channel
-• Critical, warning and pass levels, and merge tags marked as unverifiable rather than broken
-• Optional redirect check: do your UTMs survive the redirect?
+CHECK
+• This page: check every link on the open page and locate any of them with one click
+• Email drafts: check the links in a draft in your webmail or email marketing editor before you send. It reads links only when you click, and nothing leaves your browser
+• Paste: check a list of links or a whole email's HTML, then copy the corrected HTML
+• Finds missing UTMs, UTMs after #, a second "?", encoded macros, double encoding, case and spacing problems, duplicates, click IDs and naming-rule breaks
+• Critical, warning and pass levels; merge tags are marked as unverifiable rather than broken
+• Optional redirect check: see whether your UTMs survive a redirect
 
 WHATSAPP LINKS
-• wa.me click-to-chat links with a pre-filled message
-• A tagged landing-page link inside the message (UTMs on the wa.me link itself never reach GA4), plus an optional ref code
+• Click-to-chat links with a pre-filled message
+• A tagged website link inside the message, because UTMs on the chat link itself never reach GA4
 • QR codes for print, packaging and shop windows
 
-TEAMS AND AGENCIES
-• Unlimited client workspaces, each with its own approved sources and mediums, locked dropdowns, allowed domains and campaign pattern
-• A team rules file in JSON, shared with The Growth Folks® Bulk UTM Link Checker
-• Bulk matrix, CSV upload, UTM Cleaner and an email HTML tagger
-• Optional short links with your own Bitly, Dub or Rebrandly key, styled QR codes, webhooks to Zapier, Slack or Google Sheets
-• Searchable history with CSV and Sheets export
+FOR TEAMS AND AGENCIES
+• Unlimited client workspaces, each with approved sources and mediums, locked options, allowed domains and a campaign pattern
+• A shareable rules file so the whole team uses the same names
+• Bulk link builder, CSV upload, UTM cleaner and an email HTML tagger
+• Optional short links with your own link-shortener API key, styled QR codes and webhooks
+• Searchable history with CSV export
 
 PRIVACY
-No account and no server. Your workspaces, rules and history stay in your browser. The extension makes a network request only when you ask it to: to your own shortener when you click Shorten, to the destination page when you run a link or redirect check, or to your own webhook if you set one up. It contains no analytics or tracking.
+No account and no server. Your workspaces, rules and history stay in your browser. The extension makes a network request only when you ask it to: to your own link shortener, to the pages you check, or to your own webhook. It contains no analytics or tracking.
 
-Made by The Growth Folks®
+Free. Made by The Growth Folks®.
 https://thegrowthfolks.com/tools/utm-builder/
 ```
 
