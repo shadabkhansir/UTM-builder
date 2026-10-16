@@ -25,6 +25,10 @@ I re-read the research files and SPEC.md. These are the things we left out, or d
 - **Rules file schema:** the website's Bulk UTM Link Checker repo doesn't exist yet, so this extension sets the schema (`docs/RULES_SCHEMA.md`). The campaign pattern uses the brace syntax from that tool's brief (`{yyyy}-{mm}_{market}`); the extension converts to its in-app bracket syntax.
 - **GA4 rules "as of" date:** 13 May 2026, the date of the most recent change we could find (AI Assistant channel, RISKS K1). Not today's date.
 
+## Pricing
+
+- **Everything is free for now.** No paid plan, licence check, feature limit or upgrade prompt. Paid features come later, once there is a customer base to learn from; the decision on what to charge for will use real usage then, not a guess now.
+
 ## Known risks we accept
 
 - Pre-send checks see links before the email platform rewrites them (HubSpot/Mailchimp tracking, Outlook Safe Links). The UI says so and recommends a test send (K3).

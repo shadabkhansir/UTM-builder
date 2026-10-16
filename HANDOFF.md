@@ -4,7 +4,7 @@ For the `shadabkhansir/web` session. This replaces the `utm-builder` entry in `s
 
 - **Repo / branch:** `shadabkhansir/utm-builder`, branch `claude/utm-builder-checker` (PR into `claude/epic-galileo-qwenfn`).
 - **Chrome Web Store:** not live yet. Show "Coming soon" and leave `storeUrl` empty.
-- **Free vs Pro:** everything is free. No paywall, no account, no licence check in the code.
+- **Pricing:** everything is free. No paid plan, no account, no licence check in the code. Don't show a Pro or pricing section on the landing page.
 - **Screenshots:** `store/screenshots/*.png` (1280×800). Copy them to `src/assets/tools/utm-builder/` on the website. Alt text is in `store/screenshots/alt-text.json` and below.
 - **Privacy page:** generated from `data` below. It now covers the email draft check and the redirect check, so regenerate it.
 

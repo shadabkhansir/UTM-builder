@@ -2,7 +2,7 @@
 
 Local-first Chrome extension for growth marketers and agencies, published by The Growth Folks® (https://thegrowthfolks.com/tools/utm-builder/). It builds UTM links, **checks the links you already have** (on a page, in an email draft or pasted), builds WhatsApp click-to-chat links with a tagged website link, and **tells you which GA4 channel each link will land in, and why, before you ship it**.
 
-Short name: "UTM Builder". Slug: `utm-builder`. Version 0.3.0. Free, with no account and no server. The extension ID and storage keys are unchanged from v0.2 ("UTM Governor"), so existing installs keep their workspaces and history.
+Short name: "UTM Builder". Slug: `utm-builder`. Version 0.3.0. Every feature is free, with no account and no server. The extension ID and storage keys are unchanged from v0.2 ("UTM Governor"), so existing installs keep their workspaces and history.
 
 ## Install (dev)
 1. `chrome://extensions` → enable Developer mode → **Load unpacked** → select this folder.
@@ -64,7 +64,9 @@ Verified against Google's docs (support.google.com/analytics/answer/9756891) and
 - GA4 now has an **AI Assistant** channel (`medium=ai-assistant`) and **Paid Other** — any predictor that ignores these is wrong.
 - Several "top 10" competitors listed (Campouse, Uplinkly, "UTM Builder Pro by Nuvix", UTM Smart Manager) and quoted prices/user counts were not verified and may not exist as described. Re-check on the Chrome Web Store before using them in positioning.
 
+## Pricing
+Everything is free, with no paid plan, licence check or feature limits in the code. Paid features are deferred until the extension has a customer base; see `docs/DECISIONS.md`.
+
 ## Roadmap
 - Cloud sync of workspaces, history and activity log (Supabase with row-level security), replacing share codes.
-- License gating (ExtensionPay or Lemon Squeezy). Suggested: Free = everything local + 2 workspaces; Pro $9 = unlimited workspaces, bulk/CSV, cleaner, styled QR, webhooks; Team $19 = sync, shared audit log, approvals across devices.
 - Direct GA4 Data API connection for live picklists and the Unassigned audit.
