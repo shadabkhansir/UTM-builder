@@ -19,8 +19,18 @@ const ORIGIN = 'http://ext.test';
 const PW = process.env.PLAYWRIGHT_MODULE || '/opt/node22/lib/node_modules/playwright/index.mjs';
 const { chromium } = await import(PW);
 
-const BRAND = { green: '#1f6b4f', ink: '#16181d', paper: '#fbfaf7', accent: '#f2a541' };
-const FONT = `Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+// Values from brand/tokens.css (light theme). Store graphics: warm off-white,
+// real UI, one Inter 800 headline; green only for the brand and one phrase.
+const BRAND = { green: '#1f6b4f', ink: '#16181d', inkSoft: '#4a4f5a', paper: '#fbfaf7', surface: '#ffffff', line: '#e6e3dc', brandInk: '#ffffff' };
+const FONT = `'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif`;
+const fontFaces = (
+  await Promise.all(
+    [400, 600, 800].map(async w => {
+      const b64 = (await readFile(path.join(ROOT, `src/fonts/inter-latin-${w}-normal.woff2`))).toString('base64');
+      return `@font-face { font-family: 'Inter'; font-weight: ${w}; src: url(data:font/woff2;base64,${b64}) format('woff2'); }`;
+    })
+  )
+).join('\n');
 
 // ---------- sample data ----------
 
@@ -163,11 +173,12 @@ async function render(browser, html, width, height, file) {
 }
 
 const baseCss = `
+  ${fontFaces}
   * { box-sizing: border-box; margin: 0; }
   body { font-family: ${FONT}; color: ${BRAND.ink}; background: ${BRAND.paper}; overflow: hidden; }
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 18px; color: ${BRAND.ink}; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; letter-spacing: -0.01em; color: ${BRAND.ink}; }
   .brand img { width: 36px; height: 36px; }
-  .by { color: ${BRAND.green}; }
+  .by { color: ${BRAND.inkSoft}; font-weight: 600; }
 `;
 
 function screenshotHtml({ shot, headline, sub, bullets = [], shotWidth = 400 }) {
@@ -176,21 +187,19 @@ function screenshotHtml({ shot, headline, sub, bullets = [], shotWidth = 400 }) 
     .left { padding: 72px 40px 56px 72px; display: flex; flex-direction: column; gap: 22px; }
     h1 { font-size: 46px; line-height: 1.08; letter-spacing: -0.02em; font-weight: 800; }
     h1 em { font-style: normal; color: ${BRAND.green}; }
-    p.sub { font-size: 20px; line-height: 1.45; color: #3d4250; }
-    ul { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 17px; color: #2a2e38; }
-    li::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: ${BRAND.accent}; margin-right: 12px; vertical-align: 1px; }
-    .foot { margin-top: auto; }
-    .right { background: ${BRAND.green}; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-    .right::before { content: ''; position: absolute; width: 560px; height: 560px; border-radius: 50%; background: rgba(255,255,255,.06); top: -160px; right: -180px; }
-    .right::after { content: ''; position: absolute; width: 220px; height: 220px; border-radius: 50%; background: ${BRAND.accent}; opacity: .9; bottom: -90px; left: -70px; }
-    .shot { position: relative; z-index: 1; width: ${shotWidth}px; max-height: 720px; border-radius: 12px; box-shadow: 0 30px 70px rgba(0,0,0,.35), 0 0 0 1px rgba(0,0,0,.08); background: #fff; object-fit: cover; object-position: top; }
+    p.sub { font-size: 20px; line-height: 1.45; color: ${BRAND.inkSoft}; }
+    ul { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 17px; color: ${BRAND.ink}; }
+    li::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: ${BRAND.green}; margin-right: 12px; vertical-align: 2px; }
+    .foot { margin-top: auto; font-size: 15px; color: ${BRAND.inkSoft}; }
+    .right { position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .shot { position: relative; width: ${shotWidth}px; max-height: 720px; border-radius: 20px; border: 1px solid ${BRAND.line}; box-shadow: 0 10px 30px -12px rgb(22 24 29 / 0.18); background: ${BRAND.surface}; object-fit: cover; object-position: top; }
   </style></head><body><div class="wrap">
     <div class="left">
       <div class="brand"><img src="${ICON}"> UTM Governor <span class="by">by The Growth Folks®</span></div>
       <h1>${headline}</h1>
       <p class="sub">${sub}</p>
       <ul>${bullets.map(b => `<li>${b}</li>`).join('')}</ul>
-      <div class="foot"></div>
+      <div class="foot">thegrowthfolks.com</div>
     </div>
     <div class="right"><img class="shot" src="${shot}"></div>
   </div></body></html>`;
@@ -292,7 +301,7 @@ const shots = [
     file: 'screenshot-5-1280x800.png', shot: s5, shotWidth: 640,
     headline: 'Naming rules your <em>whole team</em> follows',
     sub: 'One workspace per client: approved values, locked dropdowns, campaign formulas and presets.',
-    bullets: ['Campaign name formulas with dropdowns', 'Share workspaces as a JSON file', 'Bring your own Bitly, Dub or Rebrandly key'],
+    bullets: ['Campaign name formulas with dropdowns', 'Share workspaces with a code or QR', 'Bring your own Bitly, Dub or Rebrandly key'],
   },
 ];
 
@@ -302,19 +311,17 @@ for (const s of shots) await render(browser, screenshotHtml({ ...s, shot: dataUr
 await render(
   browser,
   `<!doctype html><html><head><style>${baseCss}
-    body { background: ${BRAND.green}; color: #fff; }
-    .t { width: 440px; height: 280px; padding: 30px 32px; display: flex; flex-direction: column; gap: 12px; position: relative; overflow: hidden; }
-    .t::after { content: ''; position: absolute; width: 180px; height: 180px; border-radius: 50%; background: ${BRAND.accent}; right: -60px; bottom: -70px; }
+    body { background: ${BRAND.green}; color: ${BRAND.brandInk}; }
+    .t { width: 440px; height: 280px; padding: 30px 32px; display: flex; flex-direction: column; gap: 12px; }
     .row { display: flex; align-items: center; gap: 12px; }
-    .row img { width: 52px; height: 52px; border-radius: 12px; background: #fff; padding: 4px; }
+    .inv { width: 52px; height: 52px; border-radius: 15px; background: ${BRAND.brandInk}; color: ${BRAND.green}; display: grid; place-items: center; font-weight: 800; font-size: 26px; }
     h1 { font-size: 34px; font-weight: 800; letter-spacing: -0.02em; }
-    p { font-size: 19px; line-height: 1.3; max-width: 330px; color: #e9f3ee; }
-    .by { margin-top: auto; font-size: 14px; color: #cfe5da; position: relative; z-index: 1; }
-    .by b { color: #fff; }
+    p { font-size: 19px; line-height: 1.3; max-width: 340px; }
+    .t .by { margin-top: auto; font-size: 14px; font-weight: 600; color: ${BRAND.brandInk}; }
   </style></head><body><div class="t">
-    <div class="row"><img src="${ICON}"><h1>UTM Governor</h1></div>
+    <div class="row"><span class="inv">U</span><h1>UTM Governor</h1></div>
     <p>GA4-safe UTM links. See the channel before you ship.</p>
-    <div class="by">by <b>The Growth Folks®</b></div>
+    <div class="by">by The Growth Folks®</div>
   </div></body></html>`,
   440, 280, 'promo-small-440x280.png'
 );
@@ -327,10 +334,9 @@ await render(
     .l { padding: 70px 40px 60px 80px; display: flex; flex-direction: column; gap: 22px; }
     h1 { font-size: 60px; line-height: 1.04; font-weight: 800; letter-spacing: -0.025em; }
     h1 em { font-style: normal; color: ${BRAND.green}; }
-    p { font-size: 22px; color: #3d4250; max-width: 600px; line-height: 1.4; }
-    .r { background: ${BRAND.green}; position: relative; overflow: hidden; }
-    .r::after { content: ''; position: absolute; width: 260px; height: 260px; border-radius: 50%; background: ${BRAND.accent}; left: -90px; bottom: -110px; }
-    .r img.shot { position: absolute; z-index: 1; width: 400px; top: 50px; left: 110px; border-radius: 12px; box-shadow: 0 30px 70px rgba(0,0,0,.35); }
+    p { font-size: 22px; color: ${BRAND.inkSoft}; max-width: 600px; line-height: 1.4; }
+    .r { position: relative; overflow: hidden; }
+    .r img.shot { position: absolute; width: 420px; top: 48px; left: 100px; border-radius: 20px; border: 1px solid ${BRAND.line}; box-shadow: 0 10px 30px -12px rgb(22 24 29 / 0.18); }
   </style></head><body><div class="m">
     <div class="l">
       <div class="brand"><img src="${ICON}"> UTM Governor <span class="by">by The Growth Folks®</span></div>

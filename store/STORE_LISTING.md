@@ -159,7 +159,7 @@ Ticking "Authentication information", "Web history" and "Website content" is the
 ### URLs
 
 - **Homepage URL:** https://thegrowthfolks.com/tools/utm-builder
-- **Support URL:** https://thegrowthfolks.com/tools/utm-builder (support email: hello@thegrowthfolks.com)
+- **Support URL:** https://thegrowthfolks.com/tools/utm-builder (support email: team@thegrowthfolks.com)
 - **Privacy policy URL:** https://thegrowthfolks.com/tools/utm-builder/privacy
 
 ---

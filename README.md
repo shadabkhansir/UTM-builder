@@ -10,6 +10,7 @@ Local-first Chrome extension for growth marketers and agencies, published by The
 `npm test` runs the engine unit tests (Node 20+, no dependencies). `npm run package` builds `dist/utm-governor.zip` for the Web Store.
 
 ## Branding & store assets (v0.2)
+- Styling follows The Growth Folks® design system (`CLAUDE.md`, `brand/`, `.claude/skills/tgf-design-system/`). `src/styles/tokens.css` is an unchanged copy of `brand/tokens.css` (the store package only ships `src/`); refresh it whenever `brand/` changes. Inter 400/600/800 is bundled in `src/fonts/` (SIL OFL). Contact: team@thegrowthfolks.com.
 - Popup, side panel and options page carry a small "by The Growth Folks®" mark plus Help / Privacy / Contact / Learn links (all with `utm_source=chrome-extension&utm_medium=referral&utm_campaign=utm-builder`).
 - On first install (not on update) the service worker opens `https://thegrowthfolks.com/tools/utm-builder/welcome` via `chrome.tabs.create` (no `tabs` permission needed).
 - Exports (CSV / Sheets rows / QR / workspace JSON) are plain data with no header or footer, so no credit line is added to them.

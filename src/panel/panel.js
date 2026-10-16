@@ -286,6 +286,13 @@ function bindEvents() {
     onChange();
   };
 
+  // Close the "Copy as" menu on outside click or Escape.
+  document.addEventListener('click', e => {
+    if ($('copyMenu').open && !$('copyMenu').contains(e.target)) $('copyMenu').open = false;
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') $('copyMenu').open = false;
+  });
   document.addEventListener('keydown', e => {
     if ($('tab-build').hidden || !(e.ctrlKey || e.metaKey) || e.key !== 'Enter') return;
     e.preventDefault();
@@ -601,8 +608,9 @@ function render() {
 
   const a = analyze(v);
   $('ga4').className = `ga4 ${a.level}`;
-  const icon = { ok: '🟢', warn: '🟡', error: '🔴', idle: '' }[a.level];
-  $('ga4Pill').textContent = a.channel ? `${icon} GA4 channel: ${a.channel}` : 'GA4 channel: enter source & medium';
+  // Status is always icon + word + colour, never colour alone.
+  const status = { ok: '✓ Pass', warn: '! Warning', error: '✕ Critical', idle: '' }[a.level];
+  $('ga4Pill').textContent = a.channel ? `${status} · GA4 channel: ${a.channel}` : 'GA4 channel: enter source & medium';
   $('ga4Msgs').replaceChildren(
     ...a.messages.map(m => Object.assign(document.createElement('li'), { textContent: m })),
     ...a.fixes.map(fx => {
@@ -708,6 +716,7 @@ async function copy(kind) {
     }[kind];
   }
   await writeClipboard(text);
+  $('copyMenu').open = false;
   await recordLink(kind);
   toast({ url: 'URL copied', query: 'Parameters copied', row: 'Row copied — paste into Sheets', md: 'Markdown copied', html: 'HTML copied', platform: 'Copied for ' + $('platform').selectedOptions[0].text }[kind]);
 }

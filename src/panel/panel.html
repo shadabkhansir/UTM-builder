@@ -4,19 +4,27 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>UTM Governor</title>
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/fonts.css">
   <link rel="stylesheet" href="panel.css">
 </head>
 <body>
   <header class="top">
-    <select id="workspace" title="Client workspace" aria-label="Workspace"></select>
-    <nav class="tabs" role="tablist">
-      <button role="tab" data-tab="build" aria-selected="true">Build</button>
-      <button role="tab" data-tab="bulk">Bulk</button>
-      <button role="tab" data-tab="audit">Audit</button>
-      <button role="tab" data-tab="history">History</button>
-    </nav>
-    <button id="dock" class="icon" title="Open in side panel (stays open while you work)" aria-label="Open in side panel">⇥</button>
-    <button id="settings" class="icon" title="Settings & workspaces" aria-label="Settings">⚙</button>
+    <div class="brandrow">
+      <span class="mark" aria-hidden="true">TGF</span>
+      <span class="product">UTM Governor</span>
+      <button id="dock" class="icon ghost" title="Open in side panel (stays open while you work)" aria-label="Open in side panel">⇥</button>
+      <button id="settings" class="icon ghost" title="Settings &amp; workspaces" aria-label="Settings">⚙</button>
+    </div>
+    <div class="ctrlrow">
+      <select id="workspace" title="Client workspace" aria-label="Workspace"></select>
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-tab="build" aria-selected="true">Build</button>
+        <button role="tab" data-tab="bulk">Bulk</button>
+        <button role="tab" data-tab="audit">Audit</button>
+        <button role="tab" data-tab="history">History</button>
+      </nav>
+    </div>
   </header>
 
   <!-- BUILD -->
@@ -131,24 +139,30 @@
     <div class="output">
       <textarea id="out" readonly rows="3" placeholder="Your tagged URL appears here" aria-label="Tagged URL"></textarea>
       <div id="removed" class="hint"></div>
-      <div class="copy">
+      <div class="actions">
         <button id="copyUrl" class="primary" title="Ctrl/⌘ + Enter">Copy URL</button>
-        <button id="copyQuery" title="utm_source=…&amp;… only (Ctrl/⌘ + Shift + Enter)">Params only</button>
-        <button id="copyRow" title="Paste into Google Sheets/Excel to fill a whole row">Sheet row</button>
-        <button id="copyMd">Markdown</button>
-        <button id="copyHtml">HTML</button>
+        <details class="menu" id="copyMenu">
+          <summary>Copy as</summary>
+          <div class="menu-pop">
+            <button id="copyQuery" title="Ctrl/⌘ + Shift + Enter">Parameters only (utm_source=…)</button>
+            <button id="copyRow">Spreadsheet row (Sheets / Excel)</button>
+            <button id="copyMd">Markdown link</button>
+            <button id="copyHtml">HTML link</button>
+            <div class="sep"></div>
+            <div class="row platform">
+              <select id="platform" aria-label="Copy for ad platform"></select>
+              <button id="copyPlatform" class="small">Copy</button>
+            </div>
+            <div id="platformHint" class="hint"></div>
+          </div>
+        </details>
       </div>
-      <div class="row platform">
-        <select id="platform" aria-label="Copy for ad platform"></select>
-        <button id="copyPlatform">Copy</button>
-      </div>
-      <div id="platformHint" class="hint"></div>
-      <div class="copy">
-        <input id="slug" placeholder="custom ending (optional)" spellcheck="false" aria-label="Custom short link ending">
+      <div class="tools">
+        <input id="slug" placeholder="Custom ending (optional)" spellcheck="false" aria-label="Custom short link ending">
         <button id="shorten">Shorten</button>
         <button id="qrBtn">QR code</button>
       </div>
-      <div class="copy">
+      <div class="tools">
         <button id="checkBtn" title="Status code and redirects">Check link</button>
         <button id="landingBtn" title="Open in a background tab and check UTMs survive and GA4 is present">Test landing</button>
         <button id="reset" class="ghost">Clear</button>
@@ -270,7 +284,7 @@
     <nav class="tgf-links" aria-label="The Growth Folks links">
       <a href="https://thegrowthfolks.com/tools/utm-builder?utm_source=chrome-extension&amp;utm_medium=referral&amp;utm_campaign=utm-builder&amp;utm_content=panel-footer" target="_blank" rel="noopener">Help</a>
       <a href="https://thegrowthfolks.com/tools/utm-builder/privacy?utm_source=chrome-extension&amp;utm_medium=referral&amp;utm_campaign=utm-builder&amp;utm_content=panel-footer" target="_blank" rel="noopener">Privacy</a>
-      <a href="mailto:hello@thegrowthfolks.com?subject=UTM%20Governor">Contact</a>
+      <a href="mailto:team@thegrowthfolks.com?subject=UTM%20Governor">Contact</a>
       <a href="https://thegrowthfolks.com/learn?utm_source=chrome-extension&amp;utm_medium=referral&amp;utm_campaign=utm-builder&amp;utm_content=panel-footer" target="_blank" rel="noopener">Learn growth marketing</a>
     </nav>
   </footer>
