@@ -1,16 +1,11 @@
 // GA4 Default Channel Group predictor for manually tagged (UTM) traffic.
-// Mirrors the "Channels for manual traffic" table at
-// https://support.google.com/analytics/answer/9756891 — rules are evaluated
-// top to bottom and the first match wins. Matching is case-insensitive.
+// The rules themselves live as data in ga4-rules.js (Google's "Channels for
+// manual traffic" table); this file evaluates them and explains the result.
 
 import { SEARCH_SOURCES, SOCIAL_SOURCES, SHOPPING_SOURCES, VIDEO_SOURCES } from './ga4-sources.js';
+import { RULES, UNASSIGNED_WHY } from './ga4-rules.js';
 
 const PAID_MEDIUM = /^(.*cp.*|ppc|retargeting|paid.*)$/;
-const SHOP_CAMPAIGN = /^(.*(([^a-df-z]|^)shop|shopping).*)$/;
-const DISPLAY_MEDIUMS = new Set(['display', 'banner', 'expandable', 'interstitial', 'cpm']);
-const SOCIAL_MEDIUMS = new Set(['social', 'social-network', 'social-media', 'sm', 'social network', 'social media']);
-const EMAIL_VALUES = new Set(['email', 'e-mail', 'e_mail', 'e mail']);
-const REFERRAL_MEDIUMS = new Set(['referral', 'app', 'link']);
 
 // Aliases people commonly type that GA4 does NOT recognise, mapped to a value it does.
 const SOURCE_FIXES = {
@@ -51,37 +46,39 @@ export function sourceCategory(source) {
   return null;
 }
 
-// Returns the channel GA4 will assign for the given UTM values.
-export function predictChannel({ source = '', medium = '', campaign = '' } = {}) {
-  const s = norm(source);
-  const m = norm(medium);
-  const c = norm(campaign);
-  const cat = sourceCategory(s);
-  const paid = PAID_MEDIUM.test(m);
-  const shopCampaign = SHOP_CAMPAIGN.test(c);
+const REGEX_CACHE = new Map();
+function re(pattern) {
+  if (!REGEX_CACHE.has(pattern)) REGEX_CACHE.set(pattern, new RegExp(pattern));
+  return REGEX_CACHE.get(pattern);
+}
 
-  if (s === '(direct)' && (m === '(not set)' || m === '(none)')) return 'Direct';
-  if (c.includes('cross-network')) return 'Cross-network';
-  if ((cat === 'shopping' || shopCampaign) && paid) return 'Paid Shopping';
-  if (cat === 'search' && paid) return 'Paid Search';
-  if (cat === 'social' && paid) return 'Paid Social';
-  if (cat === 'video' && paid) return 'Paid Video';
-  if (DISPLAY_MEDIUMS.has(m)) return 'Display';
-  if (paid) return 'Paid Other';
-  if (cat === 'shopping' || shopCampaign) return 'Organic Shopping';
-  if (cat === 'social' || SOCIAL_MEDIUMS.has(m)) return 'Organic Social';
-  if (cat === 'video' || m.includes('video')) return 'Organic Video';
-  if (cat === 'search' || m === 'organic') return 'Organic Search';
-  if (m === 'ai-assistant') return 'AI Assistant';
-  if (REFERRAL_MEDIUMS.has(m)) return 'Referral';
-  if (EMAIL_VALUES.has(s) || EMAIL_VALUES.has(m)) return 'Email';
-  if (m === 'affiliate') return 'Affiliates';
-  if (m === 'audio') return 'Audio';
-  if (s === 'sms' || m === 'sms') return 'SMS';
-  if (m.endsWith('push') || m.includes('mobile') || m.includes('notification') || s === 'firebase') {
-    return 'Mobile Push Notifications';
+function test(cond, v) {
+  if (cond.all) return cond.all.every(c => test(c, v));
+  if (cond.any) return cond.any.some(c => test(c, v));
+  const x = v[cond.field];
+  switch (cond.op) {
+    case 'is': return x === cond.value;
+    case 'in': return cond.value.includes(x);
+    case 'regex': return re(cond.value).test(x);
+    case 'contains': return x.includes(cond.value);
+    case 'endsWith': return x.endsWith(cond.value);
+    case 'category': return sourceCategory(x) === cond.value;
+    default: throw new Error(`Unknown GA4 rule op: ${cond.op}`);
   }
-  return 'Unassigned';
+}
+
+// Which channel GA4 assigns, and the rule that decided it.
+export function explainChannel({ source = '', medium = '', campaign = '' } = {}) {
+  const v = { source: norm(source), medium: norm(medium), campaign: norm(campaign) };
+  for (const rule of RULES) {
+    if (test(rule.when, v)) return { channel: rule.channel, why: rule.why };
+  }
+  return { channel: 'Unassigned', why: UNASSIGNED_WHY };
+}
+
+// Returns the channel GA4 will assign for the given UTM values.
+export function predictChannel(values) {
+  return explainChannel(values).channel;
 }
 
 // Prediction plus human-readable warnings/suggestions for the UI badge.
@@ -89,9 +86,9 @@ export function predictChannel({ source = '', medium = '', campaign = '' } = {})
 export function analyze(values) {
   const source = norm(values.source);
   const medium = norm(values.medium);
-  if (!source && !medium) return { channel: null, level: 'idle', messages: [], fixes: [] };
+  if (!source && !medium) return { channel: null, why: '', level: 'idle', messages: [], fixes: [] };
 
-  const channel = predictChannel(values);
+  const { channel, why } = explainChannel(values);
   const cat = sourceCategory(source);
   const paidMedium = PAID_MEDIUM.test(medium);
   const messages = [];
@@ -127,7 +124,7 @@ export function analyze(values) {
     messages.push(suggestMedium(source, cat));
   }
 
-  return { channel, level, messages, fixes };
+  return { channel, why, level, messages, fixes };
 }
 
 function looksPaid(m) {

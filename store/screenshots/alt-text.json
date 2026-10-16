@@ -1,0 +1,26 @@
+[
+  {
+    "file": "store/screenshots/1-build-ga4-channel.png",
+    "alt": "Building a UTM link with the predicted GA4 channel and the rule that decided it"
+  },
+  {
+    "file": "store/screenshots/2-check-page.png",
+    "alt": "UTM Checker grading every link on a web page with critical, warning and pass levels"
+  },
+  {
+    "file": "store/screenshots/3-check-email-draft.png",
+    "alt": "Checking the links in an email draft before sending, including a duplicate and a merge tag"
+  },
+  {
+    "file": "store/screenshots/4-whatsapp-link.png",
+    "alt": "WhatsApp click-to-chat link builder with a tagged website link inside the message and a QR code"
+  },
+  {
+    "file": "store/screenshots/5-team-rules-file.png",
+    "alt": "Importing a team rules file in Settings with a preview of what will change"
+  },
+  {
+    "file": "store/screenshots/6-bulk-matrix.png",
+    "alt": "Bulk matrix generating every UTM combination with a GA4 prediction per row"
+  }
+]

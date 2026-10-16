@@ -1,4 +1,4 @@
-/* UTM Governor by The Growth Folks®. Built only on brand tokens
+/* UTM Builder & Checker for GA4 by The Growth Folks®. Built only on brand tokens
    (../styles/tokens.css, copied unchanged from brand/) at dense UI sizes:
    body 14px, labels 13px, captions 12px, controls 36px (GUIDELINES §6, §11). */
 
@@ -24,6 +24,7 @@ body.side { width: auto; }
   padding: var(--s-3) var(--s-4); background: var(--surface); border-bottom: 1px solid var(--line);
 }
 .brandrow, .ctrlrow { display: flex; align-items: center; gap: var(--s-2); }
+.top > select { width: 100%; font-weight: 600; }
 .mark {
   width: 24px; height: 24px; flex: none; border-radius: 7px;
   background: var(--brand); color: var(--brand-ink);
@@ -32,6 +33,7 @@ body.side { width: auto; }
 .product { font-weight: 800; font-size: var(--t-sm); letter-spacing: -0.02em; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ctrlrow select { flex: 1; min-width: 0; font-weight: 600; }
 .tabs { display: flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: var(--pill); background: var(--bg); }
+.top > .tabs > button { flex: 1; padding: 0 var(--s-2); }
 .tabs button, .subtabs button {
   border: 0; background: transparent; height: 28px; padding: 0 var(--s-3); border-radius: var(--pill);
   color: var(--ink-soft); font-weight: 600; font-size: var(--t-xs);
@@ -218,3 +220,33 @@ a.tgf-mark:hover { color: var(--brand); text-decoration: underline; }
 .tgf-mark strong { font-weight: 600; color: var(--ink); }
 .request .row > select { flex: 0 0 104px; }
 .request .row > input { flex: 1 1 120px; }
+
+/* ---------- Check tab ---------- */
+.ga4 .why, .lint .why { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+.ga4.ok .why, .ga4.warn .why { color: inherit; opacity: .85; }
+.summary { display: flex; flex-wrap: wrap; gap: var(--s-1); align-items: center; }
+.summary .sumline { width: 100%; font-weight: 600; font-size: var(--t-sm); }
+.chip { display: inline-flex; align-items: center; height: 22px; padding: 0 var(--s-2); border-radius: var(--pill); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.chip.critical { background: var(--danger-soft); color: var(--ink); box-shadow: inset 0 0 0 1px var(--danger); }
+.chip.warning { background: var(--accent-soft); color: var(--accent-ink); }
+.chip.pass { background: var(--brand-soft); color: var(--brand); }
+.chip.unverifiable { background: var(--bg); color: var(--ink-soft); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.lint > li.critical { border-color: var(--danger); }
+.lint > li.warning { border-color: var(--accent); }
+.lint > li.critical .u::before, .lint > li.warning .u::before, .lint > li.pass .u::before { content: none; }
+.lint .cardtop { display: flex; gap: var(--s-2); align-items: center; min-width: 0; }
+.lint .ltext { font-size: 12px; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.lint ul li.critical { color: var(--ink); }
+.lint ul li.critical::marker { color: var(--danger); }
+.lint ul li.warning { color: var(--accent-ink); }
+.lint ul li.unverifiable { color: var(--ink-soft); }
+.lint .u.fixed { color: var(--brand); }
+.lint .acts { display: flex; gap: var(--s-1); flex-wrap: wrap; margin-top: var(--s-1); }
+.lint .redirect.error { color: var(--danger); }
+#k-result { display: flex; flex-direction: column; gap: var(--s-2); }
+#k-result > .row { justify-content: space-between; }
+details.ga4audit { border-top: 1px solid var(--line); padding-top: var(--s-3); }
+
+/* ---------- WhatsApp tab ---------- */
+.wa-num { grid-template-columns: 150px 1fr; }
+#w-linkBox { border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s-3); background: var(--surface); }

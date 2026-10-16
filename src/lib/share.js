@@ -33,7 +33,7 @@ export async function encodeWorkspace(ws) {
 
 export async function decodeWorkspace(code) {
   const c = String(code || '').trim();
-  if (!c.startsWith(PREFIX)) throw new Error('This is not a UTM Governor workspace code');
+  if (!c.startsWith(PREFIX)) throw new Error('This isn’t a UTM Builder & Checker workspace code');
   const bytes = await pipe(fromB64url(c.slice(PREFIX.length)), new DecompressionStream('deflate-raw'));
   const ws = JSON.parse(new TextDecoder().decode(bytes));
   if (!ws || typeof ws !== 'object' || !ws.name) throw new Error('The workspace code is damaged');
@@ -64,7 +64,7 @@ export function encodeRequest(req) {
 
 export function decodeRequest(code) {
   const c = String(code || '').trim();
-  if (!c.startsWith(REQ_PREFIX)) throw new Error('This is not a UTM Governor approval request');
+  if (!c.startsWith(REQ_PREFIX)) throw new Error('This isn’t a UTM Builder & Checker approval request');
   const req = JSON.parse(new TextDecoder().decode(fromB64url(c.slice(REQ_PREFIX.length))));
   if (!['source', 'medium'].includes(req.field) || !req.value) throw new Error('The request is incomplete');
   return req;

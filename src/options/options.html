@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>UTM Governor — Settings</title>
+  <title>UTM Builder &amp; Checker — Settings</title>
   <link rel="stylesheet" href="../styles/tokens.css">
   <link rel="stylesheet" href="../styles/fonts.css">
   <link rel="stylesheet" href="../panel/panel.css">
@@ -12,7 +12,7 @@
 <body class="side">
   <div class="wrap">
     <div class="opt-head">
-      <div class="brandrow"><span class="mark" aria-hidden="true">TGF</span><h1>UTM Governor settings</h1></div>
+      <div class="brandrow"><span class="mark" aria-hidden="true">TGF</span><h1>UTM Builder &amp; Checker settings</h1></div>
       <a class="tgf-mark" href="https://thegrowthfolks.com/tools/utm-builder?utm_source=chrome-extension&amp;utm_medium=referral&amp;utm_campaign=utm-builder&amp;utm_content=options" target="_blank" rel="noopener">by <strong>The Growth Folks®</strong></a>
     </div>
     <nav class="toc" aria-label="Sections">
@@ -218,6 +218,18 @@
 
     <section class="card" id="s-share">
       <h2>Share with your team</h2>
+      <h3>Team rules file</h3>
+      <p class="hint">One JSON file with this workspace's naming rules: casing, separators, approved sources and mediums, domains and the campaign pattern. The same file works in The Growth Folks® Bulk UTM Link Checker. Presets, keys and webhooks aren't included.</p>
+      <div class="row">
+        <button id="rulesExport">Export rules file</button>
+        <label class="btn">Import rules file… <input type="file" id="rulesFile" accept="application/json,.json" hidden></label>
+      </div>
+      <div id="rulesPreview" class="preview" hidden>
+        <p id="rulesSummary" class="hint"></p>
+        <ul id="rulesChanges" class="issues"></ul>
+        <div class="row"><button id="rulesApply" class="primary">Apply to this workspace</button><button id="rulesCancel" class="ghost">Cancel</button></div>
+      </div>
+      <h3>Workspace code</h3>
       <p class="hint">A workspace code holds the rules, values, presets and lock — never API keys or webhook URLs. Send it in Slack or show the QR; teammates paste it below.</p>
       <div class="row"><button id="codeMake">Create workspace code</button><button id="codeCopy" disabled>Copy code</button></div>
       <textarea id="codeOut" rows="3" readonly spellcheck="false" hidden></textarea>
@@ -251,6 +263,7 @@
       <p class="hint">Live checks need permission to request any site. Link checks send a HEAD request without cookies; landing tests open the page in a background tab and close it.</p>
       <label class="check"><input type="checkbox" id="sFollow"> Side panel follows the tab you're on</label>
       <p class="hint">Needs permission to read your tabs' addresses, so the side panel can update when you switch pages.</p>
+      <p class="hint" id="rulesAsOf"></p>
       <p class="hint">Keyboard: <kbd>Alt</kbd>+<kbd>U</kbd> opens the builder · <kbd>Ctrl/⌘</kbd>+<kbd>Enter</kbd> copies the URL · add <kbd>Shift</kbd> to copy parameters only.</p>
     </section>
 
@@ -266,7 +279,7 @@
       <nav class="tgf-links" aria-label="The Growth Folks links">
         <a href="https://thegrowthfolks.com/tools/utm-builder?utm_source=chrome-extension&amp;utm_medium=referral&amp;utm_campaign=utm-builder&amp;utm_content=options" target="_blank" rel="noopener">Help</a>
         <a href="https://thegrowthfolks.com/tools/utm-builder/privacy?utm_source=chrome-extension&amp;utm_medium=referral&amp;utm_campaign=utm-builder&amp;utm_content=options" target="_blank" rel="noopener">Privacy</a>
-        <a href="mailto:team@thegrowthfolks.com?subject=UTM%20Governor">Contact</a>
+        <a href="mailto:team@thegrowthfolks.com?subject=UTM%20Builder%20%26%20Checker">Contact</a>
         <a href="https://thegrowthfolks.com/learn?utm_source=chrome-extension&amp;utm_medium=referral&amp;utm_campaign=utm-builder&amp;utm_content=options" target="_blank" rel="noopener">Learn growth marketing</a>
       </nav>
     </footer>

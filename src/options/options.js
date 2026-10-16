@@ -6,6 +6,8 @@ import { lines } from '../lib/bulk.js';
 import { parsePresetImport } from '../lib/csv.js';
 import { encodeWorkspace, decodeWorkspace, makeLock, checkPin, decodeRequest, shareable } from '../lib/share.js';
 import { drawQr } from '../lib/qrstyle.js';
+import { toRulesFile, fromRulesFile, diffRules } from '../lib/rulesfile.js';
+import { RULES_AS_OF, RULES_SOURCE } from '../lib/ga4-rules.js';
 
 const $ = id => document.getElementById(id);
 let state;
@@ -16,7 +18,7 @@ const unlocked = new Set(); // workspace ids unlocked with the PIN on this page
 const cur = () => state.workspaces.find(w => w.id === editingId) || state.workspaces[0];
 const isLocked = (w = cur()) => !!w.lock && !unlocked.has(w.id);
 
-const APPS_SCRIPT = `// UTM Governor → Google Sheets
+const APPS_SCRIPT = `// UTM Builder & Checker → Google Sheets
 function doPost(e) {
   var d = JSON.parse(e.postData.contents);
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -44,6 +46,11 @@ async function init() {
     })
   );
   $('appsScript').value = APPS_SCRIPT;
+  $('rulesAsOf').replaceChildren(
+    `GA4 channel predictions use Google's default channel group rules as of ${new Date(RULES_AS_OF + 'T00:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })} (`,
+    Object.assign(document.createElement('a'), { href: RULES_SOURCE, target: '_blank', rel: 'noopener', textContent: 'Google Analytics Help' }),
+    '). Custom channel groups in your own property aren’t taken into account.'
+  );
   bind();
   render();
   renderLog();
@@ -461,6 +468,57 @@ function bind() {
     }
   };
 
+  // Team rules file (docs/RULES_SCHEMA.md)
+  let pendingRules = null;
+  $('rulesExport').onclick = () => {
+    const file = toRulesFile(cur());
+    downloadText(`utm-rules-${slug(cur().name)}.json`, JSON.stringify(file, null, 2), 'application/json');
+    store.logActivity('rules_exported', { workspaceId: cur().id, workspace: cur().name });
+  };
+  $('rulesFile').onchange = async e => {
+    const f = e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    try {
+      pendingRules = fromRulesFile(await f.text());
+    } catch (err) {
+      pendingRules = null;
+      $('rulesPreview').hidden = false;
+      $('rulesSummary').className = 'hint err';
+      $('rulesSummary').textContent = err.message;
+      $('rulesChanges').replaceChildren();
+      $('rulesApply').hidden = true;
+      return;
+    }
+    const changes = diffRules(cur(), pendingRules.patch);
+    const notes = [...pendingRules.warnings, ...pendingRules.ignored.map(k => `Ignored “${k}”: not a valid value.`)];
+    $('rulesPreview').hidden = false;
+    $('rulesApply').hidden = !changes.length || isLocked();
+    $('rulesSummary').className = 'hint';
+    $('rulesSummary').textContent = isLocked()
+      ? 'This workspace is admin-locked. Unlock it above to apply a rules file.'
+      : changes.length
+        ? `“${pendingRules.name}” will change ${changes.length} thing${changes.length === 1 ? '' : 's'} in ${cur().name}:`
+        : `“${pendingRules.name}” matches this workspace's rules already.`;
+    $('rulesChanges').replaceChildren(
+      ...changes.map(t => Object.assign(document.createElement('li'), { className: 'warn', textContent: t })),
+      ...notes.map(t => Object.assign(document.createElement('li'), { className: 'error', textContent: t }))
+    );
+  };
+  $('rulesApply').onclick = async () => {
+    if (!pendingRules || isLocked()) return;
+    await patch(pendingRules.patch);
+    render();
+    store.logActivity('rules_imported', { workspaceId: cur().id, workspace: cur().name, from: pendingRules.name });
+    $('rulesPreview').hidden = true;
+    pendingRules = null;
+    toast('Rules applied');
+  };
+  $('rulesCancel').onclick = () => {
+    $('rulesPreview').hidden = true;
+    pendingRules = null;
+  };
+
   $('exWs').onclick = () => exportJson([cur()], `utm-workspace-${slug(cur().name)}.json`);
   $('exAll').onclick = () => exportJson(state.workspaces, `utm-workspaces-${new Date().toISOString().slice(0, 10)}.json`);
   $('imFile').onchange = importJson;
@@ -553,6 +611,7 @@ async function mergeWorkspaces(list) {
 }
 
 function exportJson(workspaces, name) {
+  // "utm-governor" is the original export type; kept so older exports and teammates on v0.2 still work.
   const blob = new Blob([JSON.stringify({ type: 'utm-governor', version: 2, workspaces: workspaces.map(shareable) }, null, 2)], { type: 'application/json' });
   const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: name });
   a.click();
@@ -564,7 +623,7 @@ async function importJson(e) {
   if (!file) return;
   try {
     const data = JSON.parse(await file.text());
-    if (data.type !== 'utm-governor' || !Array.isArray(data.workspaces)) throw new Error('Not a UTM Governor export');
+    if (data.type !== 'utm-governor' || !Array.isArray(data.workspaces)) throw new Error('Not a UTM Builder & Checker export');
     const { added, updated } = await mergeWorkspaces(data.workspaces);
     status('imStatus', `Imported: ${added} new, ${updated} updated`, 'ok');
   } catch (err) {

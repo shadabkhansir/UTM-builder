@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "UTM Governor by The Growth Folks®",
-  "short_name": "UTM Governor",
-  "version": "0.2.0",
-  "homepage_url": "https://thegrowthfolks.com/tools/utm-builder",
-  "description": "GA4-safe UTM links in one click: channel prediction, naming rules, client workspaces, bulk matrix, QR. By The Growth Folks®",
+  "name": "UTM Builder & Checker for GA4 – The Growth Folks®",
+  "short_name": "UTM Builder",
+  "version": "0.3.0",
+  "homepage_url": "https://thegrowthfolks.com/tools/utm-builder/",
+  "description": "Build and check UTM links for GA4. See the channel before you share. Page and email checker, WhatsApp links, bulk and QR.",
   "minimum_chrome_version": "116",
   "icons": {
     "16": "icons/icon16.png",
@@ -13,7 +13,7 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_title": "Build UTM link",
+    "default_title": "UTM Builder & Checker",
     "default_popup": "src/panel/panel.html",
     "default_icon": {
       "16": "icons/icon16.png",
@@ -40,6 +40,14 @@
     "https://api-ssl.bitly.com/*",
     "https://api.dub.co/*",
     "https://api.rebrandly.com/*",
+    "https://mail.google.com/*",
+    "https://outlook.office.com/*",
+    "https://outlook.office365.com/*",
+    "https://outlook.live.com/*",
+    "https://app.hubspot.com/*",
+    "https://app-eu1.hubspot.com/*",
+    "https://*.mailchimp.com/*",
+    "https://www.klaviyo.com/*",
     "https://*/*",
     "http://*/*"
   ],
@@ -48,7 +56,7 @@
       "suggested_key": {
         "default": "Alt+U"
       },
-      "description": "Open UTM builder"
+      "description": "Open UTM Builder & Checker"
     }
   },
   "optional_permissions": [

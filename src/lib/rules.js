@@ -16,6 +16,7 @@ export const DEFAULT_RULES = {
   required: ['source', 'medium', 'campaign'],
   campaignRegex: '', // optional extra check, e.g. ^\d{4}-\d{2}_[a-z0-9-]+$
   nonLatin: 'allow', // 'allow' | 'transliterate' (Arabic → Latin, é → e) | 'block'
+  stripClickIds: true, // flag fbclid/gclid/… on links being checked
 };
 
 // Variables usable in any field or campaign formula. Resolved at build time.
