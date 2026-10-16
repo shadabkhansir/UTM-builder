@@ -1,12 +1,23 @@
-# Handoff to the website: UTM Builder & Checker for GA4 (v0.3.0)
+# Website brief: UTM Builder & Checker for GA4 (v0.3.0)
 
-For the `shadabkhansir/web` session. This replaces the `utm-builder` entry in `src/data/tools.ts`. Fields follow the `Tool` interface there. The slug is unchanged, so `/tools/utm-builder/`, `/tools/utm-builder/privacy/` and `/tools/utm-builder/welcome/` keep their URLs.
+**For the Claude session working in `shadabkhansir/web`.** Follow that repo's `CLAUDE.md` and the `tgf-design-system` skill. Write "The Growth Folks®" with ®, use British spelling, no personal names, contact team@thegrowthfolks.com.
 
-- **Repo / branch:** `shadabkhansir/utm-builder`, branch `claude/utm-builder-checker` (PR into `claude/epic-galileo-qwenfn`).
-- **Chrome Web Store:** not live yet. Show "Coming soon" and leave `storeUrl` empty.
-- **Pricing:** everything is free. No paid plan, no account, no licence check in the code. Don't show a Pro or pricing section on the landing page.
-- **Screenshots:** `store/screenshots/*.png` (1280×800). Copy them to `src/assets/tools/utm-builder/` on the website. Alt text is in `store/screenshots/alt-text.json` and below.
-- **Privacy page:** generated from `data` below. It now covers the email draft check and the redirect check, so regenerate it.
+The extension was renamed from "UTM Governor" and gained a link checker, an email pre-send check, WhatsApp links and a team rules file. Its code lives in `shadabkhansir/utm-builder` (branch `claude/utm-builder-checker`). The slug stays `utm-builder`, so every URL stays the same.
+
+## Your tasks
+
+1. **Replace the `utm-builder` entry** in `src/data/tools.ts` with the entry below. It produces all three pages from one entry:
+   - `/tools/utm-builder/`: landing page (headline, intro, 6 features, steps, FAQs, audiences, screenshots, the online UTM builder as a no-install demo)
+   - `/tools/utm-builder/privacy/`: privacy policy, generated from `data`. It now covers the email draft check, the redirect check and webhooks.
+   - `/tools/utm-builder/welcome/`: opened by the extension right after install (the extension calls it with a trailing slash). It shows `quickStart` and the first 3 screenshots.
+2. **Screenshots:** delete `src/assets/tools/utm-builder/screenshot-1.png` to `screenshot-5.png` and add the six new 1280×800 PNGs from `store/screenshots/` in the utm-builder repo (branch `claude/utm-builder-checker`), keeping their file names. If you can't reach that repo, ask the user to upload them.
+3. **Old name:** update the link text in `src/content/blog/growth-marketing-vs-performance-marketing.md` (line 137, "UTM Governor") to "UTM Builder & Checker". After your edits, `grep -rn "UTM Governor" src` should return nothing.
+4. **Store status:** the Chrome Web Store listing isn't live. Leave `storeUrl` empty so the page shows "Coming soon".
+5. **Pricing:** everything is free. No account, no paid plan, no licence check. Don't add a Pro, pricing or "upgrade" section to any of these pages. Paid features come later, once there's a customer base.
+6. **Check:** `npm run build` (exam, CSP and brand checks) and `npx astro check` must pass with 0 errors. Look at all three pages in light and dark mode at desktop and phone width.
+7. Open a PR in `shadabkhansir/web`; don't merge (merging to `master` deploys).
+
+Not part of this job: the Bulk UTM Link Checker (`tgf-bulk-utm-checker`) doesn't exist yet. When it's built, it must read and write the rules file defined in `docs/RULES_SCHEMA.md` in the utm-builder repo.
 
 ## Entry (paste into `src/data/tools.ts`)
 
