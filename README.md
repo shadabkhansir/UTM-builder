@@ -1,49 +1,55 @@
-# UTM Governor by The Growth Folks® — GA4-safe UTM builder & link governance (Chrome MV3)
+# UTM Builder & Checker for GA4 – The Growth Folks® (Chrome MV3)
 
-Local-first Chrome extension for growth marketers and agencies, published by The Growth Folks® (https://thegrowthfolks.com/tools/utm-builder). It is the Chrome-extension form of the free web UTM builder on that page. Builds UTM links in one click and **tells you which GA4 channel each link will land in before you ship it**.
+Local-first Chrome extension for growth marketers and agencies, published by The Growth Folks® (https://thegrowthfolks.com/tools/utm-builder/). It builds UTM links, **checks the links you already have** (on a page, in an email draft or pasted), builds WhatsApp click-to-chat links with a tagged website link, and **tells you which GA4 channel each link will land in, and why, before you ship it**.
+
+Short name: "UTM Builder". Slug: `utm-builder`. Version 0.3.0. Free, with no account and no server. The extension ID and storage keys are unchanged from v0.2 ("UTM Governor"), so existing installs keep their workspaces and history.
 
 ## Install (dev)
 1. `chrome://extensions` → enable Developer mode → **Load unpacked** → select this folder.
 2. Click the toolbar icon (or `Alt+U`). Use ⇥ to dock into the side panel.
-3. Right-click any link or page → **Build UTM link for this link/page**.
+3. Right-click any link or page → **Build UTM link for this link/page** or **Check UTM links on this page**.
 
-`npm test` runs the engine unit tests (Node 20+, no dependencies). `npm run package` builds `dist/utm-governor.zip` for the Web Store.
+## Tests and packaging
+- `npm test` runs the unit tests (Node 20+, no dependencies): URL engine, GA4 rules (kept as data in `src/lib/ga4-rules.js`), checker, WhatsApp builder, rules file, bulk, rename checks.
+- `npm run test:e2e` loads the unpacked extension in Playwright Chromium (`/opt/pw-browsers/chromium`) and drives the Build, Check, WhatsApp and Settings flows against a local fixture page (`tests/e2e/fixtures/`).
+- `npm run package` builds `dist/utm-builder.zip` for the Web Store (manifest.json, src, icons only).
+- `node store/make-graphics.mjs` regenerates the 1280×800 screenshots in `store/screenshots/` (with `alt-text.json`), the promo tile and the marquee from the real UI.
 
-## Branding & store assets (v0.2)
-- Styling follows The Growth Folks® design system (`CLAUDE.md`, `brand/`, `.claude/skills/tgf-design-system/`). `src/styles/tokens.css` is an unchanged copy of `brand/tokens.css` (the store package only ships `src/`); refresh it whenever `brand/` changes. Inter 400/600/800 is bundled in `src/fonts/` (SIL OFL). Contact: team@thegrowthfolks.com.
-- Popup, side panel and options page carry a small "by The Growth Folks®" mark plus Help / Privacy / Contact / Learn links (all with `utm_source=chrome-extension&utm_medium=referral&utm_campaign=utm-builder`).
-- On first install (not on update) the service worker opens `https://thegrowthfolks.com/tools/utm-builder/welcome` via `chrome.tabs.create` (no `tabs` permission needed).
-- Exports (CSV / Sheets rows / QR / workspace JSON) are plain data with no header or footer, so no credit line is added to them.
-- `store/STORE_LISTING.md` has the Chrome Web Store copy, permission justifications and data-usage answers. `node store/make-graphics.mjs` regenerates the promo tile, marquee and 1280×800 screenshots in `store/` from the real UI (Playwright + a `chrome.*` stub).
+## Docs
+- `docs/RESEARCH.md` and `docs/research/` (competitors, 495 reviews, search demand, personas, risks), `docs/SPEC.md`, `docs/DECISIONS.md`.
+- `docs/RULES_SCHEMA.md`: the `tgf.utm-rules` team rules file, shared with The Growth Folks® Bulk UTM Link Checker on the website.
+- `store/STORE_LISTING.md`: store copy, permission justifications, data usage and reviewer notes. `HANDOFF.md`: the website tool entry.
 
-## What's built (v0.2) — all local, zero server cost
+## Branding
+Styling follows The Growth Folks® design system (`CLAUDE.md`, `brand/`, `.claude/skills/tgf-design-system/`), light and dark. `src/styles/tokens.css` is an unchanged copy of `brand/tokens.css` (the store package only ships `src/`); refresh it whenever `brand/` changes. Inter 400/600/800 is bundled in `src/fonts/` (SIL OFL). Contact: team@thegrowthfolks.com. On first install (not on update) the service worker opens `https://thegrowthfolks.com/tools/utm-builder/welcome/`.
+
+## What's built (v0.3)
 
 **Build**
-- Popup + side panel (same UI); side panel can follow the active tab (optional `tabs` permission). Draft saved on every keystroke.
-- **GA4 channel predictor** using Google's current manual-traffic rules and official 818-source list, with one-click fixes (meta → facebook, fb_ads → paid_social).
-- Safe URL engine: keeps existing params and `#hash`, strips click IDs and old UTMs, never encodes ad macros.
-- All GA4 campaign fields: `utm_id`, `utm_source_platform`, `utm_creative_format`, `utm_marketing_tactic`.
-- 15 built-in templates (Google Ads Search/PMax, YouTube, Microsoft, Meta FB/IG, TikTok, LinkedIn, Snapchat, X, newsletter, organic social, SMS, push, affiliate) — each verified by test to land in the right GA4 channel.
-- Presets with folders; tags remembered per site and restored on return (with Undo).
-- Variables in any field or formula: `[page_title]` `[domain]` `[path]` `[client]` `[user]` `[date:yyyy-mm]`.
-- Ad macros for Meta, Google, Microsoft, TikTok, LinkedIn.
-- Copy as URL, params only, Sheets row, Markdown, HTML, or **exact per-platform output**: Meta URL parameters, Google Ads final URL suffix / tracking template, Microsoft suffix, TikTok, LinkedIn, Adobe Analytics `cid` link.
-- Shorten via Bitly / Dub / Rebrandly (your key) with **custom endings** and **click counts** in History.
-- **Styled QR**: colours, round dots, caption, workspace logo; PNG (1200px) and SVG.
-- Link check (404s, redirects that drop UTMs) and **landing test** (opens the page in a background tab, confirms UTMs survive redirects/SPA routing and a GA4 tag is present).
-- Keyboard: `Alt+U` open, `Ctrl/⌘+Enter` copy URL, `+Shift` copy params. Light/dark/system theme.
+- Popup and side panel (same UI); the side panel can follow the active tab (optional `tabs` permission). Drafts are saved on every keystroke.
+- **GA4 channel prediction with the reason** (for example "source is on Google's search-site list and the medium is paid"), using Google's default channel group rules (as of 13 May 2026, including AI Assistant and Paid Other) and the official 818-source list. One-click fixes (meta → facebook, fb_ads → paid_social).
+- Safe URL engine: keeps existing parameters and `#hash`, strips click IDs and old UTMs, never encodes ad macros.
+- All GA4 campaign fields, with a note that GA4 doesn't report `utm_creative_format` or `utm_marketing_tactic` in standard reports.
+- 16 built-in templates (including WhatsApp), each tested to land in the right GA4 channel. Presets with folders, variables, campaign formulas.
+- Copy as URL, parameters, Sheets row, Markdown, HTML, or per-platform output (Meta URL parameters, Google Ads final URL suffix / tracking template, Microsoft, TikTok, LinkedIn, Adobe `cid`).
+- Shorten via Bitly / Dub / Rebrandly (your key) with custom endings and click counts. Styled QR (PNG and SVG). Link check and landing test.
 
-**Bulk**: matrix builder, **CSV upload** (headers auto-mapped), email HTML tagger, **UTM Cleaner** (normalise, strip click IDs, dedupe, GA4 verdict). Every row gets a GA4 verdict; copy for Sheets, copy URLs, CSV, save to history.
+**Check (new)**
+- **This page**: grades every link on the open tab (all frames) as Critical, Warning or Pass, with the GA4 channel and a **Locate** button.
+- **Email draft**: reads only the links inside the draft body in Gmail, Outlook on the web, HubSpot, Mailchimp and Klaviyo, on click, after asking for that one site.
+- **Paste**: a list of links or a whole email's HTML; copy the fixed links or the fixed HTML; CSV export.
+- Checks: missing UTMs, UTMs after `#`, a second `?`, encoded or broken macros, double encoding, duplicate or empty parameters, click IDs, case/spaces/special characters, mixed separators, locked lists, campaign pattern, allowed domains, duplicate links, and links that would land in Unassigned (for example Klaviyo’s old `utm_medium=campaign` default). Merge tags are "unverifiable", not errors. Safe Links and Google redirect wrappers are unwrapped.
+- **Check redirects** (optional all-sites permission): up to 25 links through the service worker; flags redirects that drop UTMs.
 
-**Audit**: **page link checker** (grades every tagged link on the open page) and **GA4 report audit** (upload the Traffic acquisition CSV → Unassigned/misattributed pairs with sessions → add clean values to approved lists).
+**WhatsApp (new)**: `wa.me` click-to-chat builder with country picker, a pre-filled message and a `{link}` placeholder for a tagged website link (UTMs on the wa.me link itself never reach GA4), optional ref code, QR code, history.
 
-**Governance (per workspace)**: unlimited workspaces; lowercase/space/special-char rules; **non-Latin rule** (allow / transliterate Arabic & accents / block); **campaign regex**; required fields; locked dropdowns with **display names**; domain allowlist; campaign formula; default custom params.
+**Bulk**: matrix builder, CSV upload (headers auto-mapped), email HTML tagger, UTM Cleaner. Every row gets a GA4 verdict.
 
-**Team without a backend**: **workspace share codes** (+ QR) and JSON files (API keys/webhooks never included); **admin PIN lock** (members can use but not edit rules — a soft lock, not a security control); **approval requests** (member copies a request code, admin pastes and approves); **activity log** with CSV export; your name on every link.
+**Teams**: unlimited workspaces with naming rules, locked dropdowns, display names, allowed domains and campaign regex; **team rules file** (`tgf.utm-rules` JSON) import with a preview of changes, and export; workspace share codes and QR; admin PIN lock (a soft lock, not a security control); approval requests; activity log; webhooks (Zapier/Make/n8n, Slack, Google Sheets).
 
-**Integrations**: per-workspace **webhook** on every copied link — JSON (Zapier/Make/n8n), Slack message, or **Google Sheets** via the bundled Apps Script.
+**History**: searchable, CSV and Sheets export; WhatsApp links included. **GA4 report audit** (Traffic acquisition CSV → Unassigned pairs) sits under Check.
 
-Permissions: `activeTab`, `storage`, `contextMenus`, `sidePanel`, `clipboardWrite`, `scripting`. Optional, asked only when you turn a feature on: `tabs` (follow tab), shortener API hosts, your webhook host, all sites (link check / landing test / scanning any tab).
+Permissions: `activeTab`, `storage`, `contextMenus`, `sidePanel`, `clipboardWrite`, `scripting`. Optional, asked only when you use a feature: `tabs` (follow tab), the five email editors' hosts (draft check), shortener API hosts, your webhook host, all sites (link and redirect checks, landing test, checking from the side panel). See `store/STORE_LISTING.md` for the reason behind each.
 
 ## Not built yet (needs a server or outside setup)
 - Live team sync and a shared audit log across devices (Supabase planned). Share codes + PIN lock are the stopgap.

@@ -9,7 +9,8 @@
 // data), the UI is screenshotted, and each capture is placed on a branded
 // 1280x800 canvas with a benefit headline.
 
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdir, writeFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -78,17 +79,19 @@ const history = [
   hist(5, 'linkedin', 'social', '2026-09_jackets_ksa', '', 'Organic Social', 'Jackets'),
 ];
 
-function seed({ form, workspaceId = 'ws-acme', popup = true, title = 'Winter boots — Acme Outdoor' }) {
+function seed({ form, workspaceId = 'ws-acme', popup = true, title = 'Winter boots — Acme Outdoor', tabUrl = 'https://acme-outdoor.com/winter-boots', links, granted = false, session = {} }) {
   return {
     popup,
+    links,
+    granted,
     local: {
       workspaces: [acme, studio],
       activeWorkspaceId: workspaceId,
       settings: { stripTracking: true, autoCopy: false, linkCheck: false },
       history,
     },
-    session: form ? { draft: { workspaceId, form } } : {},
-    tab: { url: 'https://acme-outdoor.com/winter-boots', title },
+    session: { ...(form ? { draft: { workspaceId, form } } : {}), ...session },
+    tab: { id: 7, url: tabUrl, title },
   };
 }
 
@@ -111,11 +114,12 @@ function chromeStub(cfg) {
   window.chrome = {
     storage: { local: mkArea(cfg.local), session: mkArea(cfg.session) },
     extension: { getViews: () => (cfg.popup ? [window] : []) },
-    tabs: { query: async () => [cfg.tab], create: noop },
+    tabs: { query: async () => [cfg.tab], create: noop, onActivated: { addListener() {} }, onUpdated: { addListener() {} } },
+    scripting: { executeScript: async () => [{ result: cfg.links || [] }] },
     windows: { getCurrent: async () => ({ id: 1 }) },
     sidePanel: { open: noop },
-    runtime: { openOptionsPage: noop, id: 'stub' },
-    permissions: { contains: async () => false, request: async () => false },
+    runtime: { openOptionsPage: noop, id: 'stub', sendMessage: async () => ({ results: [] }) },
+    permissions: { contains: async () => !!cfg.granted, request: async () => !!cfg.granted },
   };
   // Pin "today" so the formula date token is stable.
   const RealDate = Date;
@@ -128,7 +132,7 @@ function chromeStub(cfg) {
 
 // ---------- capture helpers ----------
 
-const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.json': 'application/json' };
+const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.json': 'application/json', '.woff2': 'font/woff2' };
 
 async function servePage(context) {
   await context.route(`${ORIGIN}/**`, async route => {
@@ -146,7 +150,7 @@ async function servePage(context) {
   await context.route(/^https?:\/\/(?!ext\.test)/, r => r.abort());
 }
 
-async function captureUi(browser, { page: rel, cfg, width = 400, height = 760, before, clip }) {
+async function captureUi(browser, { page: rel, cfg, width = 420, height = 760, before, clip, viewportShot = false }) {
   const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 2, colorScheme: 'light' });
   await servePage(context);
   await context.addInitScript(chromeStub, cfg);
@@ -156,7 +160,7 @@ async function captureUi(browser, { page: rel, cfg, width = 400, height = 760, b
   await page.waitForTimeout(400);
   if (before) await before(page);
   await page.waitForTimeout(250);
-  const buf = await page.screenshot({ fullPage: !clip, clip, animations: 'disabled' });
+  const buf = await page.screenshot({ fullPage: !clip && !viewportShot, clip, animations: 'disabled' });
   await context.close();
   return buf;
 }
@@ -181,7 +185,7 @@ const baseCss = `
   .by { color: ${BRAND.inkSoft}; font-weight: 600; }
 `;
 
-function screenshotHtml({ shot, headline, sub, bullets = [], shotWidth = 400 }) {
+function screenshotHtml({ shot, headline, sub, bullets = [], shotWidth = 420 }) {
   return `<!doctype html><html><head><style>${baseCss}
     .wrap { width: 1280px; height: 800px; display: grid; grid-template-columns: 560px 1fr; position: relative; }
     .left { padding: 72px 40px 56px 72px; display: flex; flex-direction: column; gap: 22px; }
@@ -195,7 +199,7 @@ function screenshotHtml({ shot, headline, sub, bullets = [], shotWidth = 400 }) 
     .shot { position: relative; width: ${shotWidth}px; max-height: 720px; border-radius: 20px; border: 1px solid ${BRAND.line}; box-shadow: 0 10px 30px -12px rgb(22 24 29 / 0.18); background: ${BRAND.surface}; object-fit: cover; object-position: top; }
   </style></head><body><div class="wrap">
     <div class="left">
-      <div class="brand"><img src="${ICON}"> UTM Governor <span class="by">by The Growth Folks®</span></div>
+      <div class="brand"><img src="${ICON}"> UTM Builder &amp; Checker <span class="by">by The Growth Folks®</span></div>
       <h1>${headline}</h1>
       <p class="sub">${sub}</p>
       <ul>${bullets.map(b => `<li>${b}</li>`).join('')}</ul>
@@ -221,24 +225,104 @@ const studioBad = {
   source: 'Meta', medium: 'paid_social', campaign: 'Spring Lookbook', term: '', content: '', id: '', extras: [], formula: {},
 };
 
-// 1. Build tab, healthy link
+// Sample links found "on the page" / "in the draft" for the Checker shots.
+const pageLinks = [
+  { href: 'https://acme-outdoor.com/winter-boots?utm_source=facebook&utm_medium=paid_social&utm_campaign=2026-10_winter-boots_uae', text: 'Shop winter boots' },
+  { href: 'https://acme-outdoor.com/jackets?utm_source=Meta&utm_medium=Paid%20Social&utm_campaign=2026-10_jackets_uae', text: 'New jackets' },
+  { href: 'https://acme-outdoor.com/tents#utm_source=email&utm_medium=email&utm_campaign=2026-10_tents_ksa', text: 'Tents' },
+  { href: 'https://acme-outdoor.com/sale?utm_source=google&utm_medium=cpc', text: 'Autumn sale' },
+  { href: 'https://acme-outdoor.com/stores', text: 'Find a store' },
+  { href: 'mailto:team@acme-outdoor.com', text: 'Email us' },
+];
+const draftLinks = [
+  { href: 'https://acme-outdoor.com/winter-boots?utm_source=email&utm_medium=email&utm_campaign=2026-10_winter-boots_uae&utm_content=hero', text: 'Shop the boots' },
+  { href: 'https://acme-outdoor.com/jackets?utm_source=klaviyo&utm_medium=campaign&utm_campaign=2026-10_jackets_uae', text: 'See jackets' },
+  { href: 'https://acme-outdoor.com/winter-boots?utm_source=email&utm_medium=email&utm_campaign=2026-10_winter-boots_uae&utm_content=hero', text: 'Shop now' },
+  { href: 'https://acme-outdoor.com/account?id=*|UNIQID|*', text: 'Your account' },
+];
+
+// 1. Build: GA4 channel and the reason
 const s1 = await captureUi(browser, { page: 'src/panel/panel.html', cfg: seed({ form: goodForm }) });
 
-// 2. Build tab, misattribution caught (unlocked workspace so free text is visible)
+// 2. Check: every link on this page graded
 const s2 = await captureUi(browser, {
   page: 'src/panel/panel.html',
-  cfg: seed({ form: studioBad, workspaceId: 'ws-studio', title: 'Spring lookbook' }),
+  cfg: seed({ form: goodForm, links: pageLinks, title: 'Autumn sale — Acme Outdoor' }),
+  height: 900,
   before: async page => {
-    // Values are as-typed; blur normalises them like a real user would see.
-    for (const id of ['f-source', 'f-medium', 'f-campaign']) {
-      await page.focus('#' + id);
-      await page.locator('#' + id).blur();
-    }
+    await page.click('[data-tab="check"]');
+    await page.click('#k-page');
+    await page.waitForSelector('#k-list li');
   },
 });
 
-// 3. Bulk matrix
+// 3. Check: email draft before you send
 const s3 = await captureUi(browser, {
+  page: 'src/panel/panel.html',
+  cfg: seed({ form: goodForm, links: draftLinks, tabUrl: 'https://www.klaviyo.com/email-editor/abc', title: 'October newsletter — Klaviyo', granted: true }),
+  height: 900,
+  before: async page => {
+    await page.click('[data-tab="check"]');
+    await page.click('[data-csrc="email"]');
+    await page.waitForTimeout(150);
+    await page.click('#k-email');
+    await page.waitForSelector('#k-list li');
+  },
+});
+
+// 4. WhatsApp click-to-chat with a tagged website link
+const s4 = await captureUi(browser, {
+  page: 'src/panel/panel.html',
+  cfg: seed({
+    form: goodForm,
+    session: {
+      waDraft: {
+        country: '971', number: '50 123 4567', message: 'Hi Acme! I saw the winter boots and want to know about sizes: {link}',
+        landing: 'https://acme-outdoor.com/winter-boots', preset: 'chat', source: 'whatsapp', medium: 'social',
+        campaign: '2026-10_winter-boots_uae', content: 'status_story', ref: 'WA-BOOTS-OCT',
+      },
+    },
+  }),
+  height: 720,
+  viewportShot: true,
+  before: async page => {
+    await page.click('[data-tab="whatsapp"]');
+    await page.waitForTimeout(150);
+    // Show the tagged link, its GA4 verdict and the finished wa.me link under the sticky header.
+    await page.evaluate(() => {
+      const header = document.querySelector('.top').getBoundingClientRect().height;
+      const y = document.querySelector('#w-message').getBoundingClientRect().top + window.scrollY - header - 12;
+      window.scrollTo(0, y);
+      document.querySelector('#w-linkBox').open = false;
+    });
+  },
+});
+
+// 5. Team rules file import preview in Settings
+const rulesTmp = path.join(tmpdir(), 'tgf-rules-sample.json');
+await writeFile(rulesTmp, JSON.stringify({
+  type: 'tgf.utm-rules', version: 1, name: 'Acme Outdoor (team rules)', casing: 'lower', spaceReplacement: '-',
+  sources: { values: ['google', 'facebook', 'instagram', 'tiktok', 'email', 'whatsapp'], locked: true, labels: {} },
+  mediums: { values: ['cpc', 'paid_social', 'email', 'social'], locked: true, labels: {} },
+  domains: ['acme-outdoor.com'], campaign: { pattern: '{yyyy}-{mm}_{product}_{region|uae,ksa,kw}', regex: '' },
+}));
+const s5 = await captureUi(browser, {
+  page: 'src/options/options.html',
+  cfg: seed({ form: goodForm }),
+  width: 800,
+  height: 1000,
+  before: async page => {
+    await page.setInputFiles('#rulesFile', rulesTmp);
+    await page.waitForSelector('#rulesPreview:not([hidden])');
+    await page.evaluate(() => document.querySelector('#s-share').scrollIntoView());
+    await page.waitForTimeout(100);
+  },
+  viewportShot: true,
+});
+await rm(rulesTmp, { force: true });
+
+// 6. Bulk matrix
+const s6 = await captureUi(browser, {
   page: 'src/panel/panel.html',
   cfg: seed({ form: goodForm }),
   width: 640,
@@ -254,57 +338,53 @@ const s3 = await captureUi(browser, {
   },
 });
 
-// 4. History
-const s4 = await captureUi(browser, {
-  page: 'src/panel/panel.html',
-  cfg: seed({ form: goodForm }),
-  before: async page => {
-    await page.click('[data-tab="history"]');
-  },
-});
-
-// 5. Options (workspaces & rules)
-const s5 = await captureUi(browser, {
-  page: 'src/options/options.html',
-  cfg: seed({ form: goodForm }),
-  width: 800,
-  height: 1100,
-  clip: { x: 0, y: 0, width: 800, height: 1100 },
-});
-
 const shots = [
   {
-    file: 'screenshot-1-1280x800.png', shot: s1,
+    file: 'screenshots/1-build-ga4-channel.png', shot: s1,
+    alt: 'Building a UTM link with the predicted GA4 channel and the rule that decided it',
     headline: 'See the <em>GA4 channel</em> before you ship the link',
-    sub: 'UTM Governor predicts exactly where each link will land in GA4 using Google\'s own channel rules.',
-    bullets: ['Popup or side panel, one click from any page', 'Strips fbclid, gclid and old UTMs', 'Copy as URL, params, Sheets row, Markdown or HTML'],
+    sub: 'Every link gets the channel GA4 will report, and why, from Google’s own channel rules.',
+    bullets: ['Popup or side panel, one click from any page', 'Strips fbclid, gclid and old UTMs', 'Copy as URL, parameters or a Sheets row'],
   },
   {
-    file: 'screenshot-2-1280x800.png', shot: s2,
-    headline: 'Catch <em>misattributed</em> UTMs with one-click fixes',
-    sub: '"meta" isn\'t a GA4 social source. Paid spend tagged that way lands in Paid Other or even Organic.',
-    bullets: ['Flags Unassigned, Paid Other and paid-as-organic', 'Auto-cleans casing, spaces and special characters', 'Required fields and domain allowlists'],
+    file: 'screenshots/2-check-page.png', shot: s2,
+    alt: 'UTM Checker grading every link on a web page with critical, warning and pass levels',
+    headline: '<em>Check every link</em> on any page',
+    sub: 'Missing UTMs, UTMs after #, casing, naming rules and Unassigned links, each with a one-click fix.',
+    bullets: ['Critical, warning and pass, never colour alone', 'Locate the link on the page', 'Copy all fixed links or export CSV'],
   },
   {
-    file: 'screenshot-3-1280x800.png', shot: s3, shotWidth: 600,
+    file: 'screenshots/3-check-email-draft.png', shot: s3,
+    alt: 'Checking the links in an email draft before sending, including a duplicate and a merge tag',
+    headline: 'Check your <em>email draft</em> before you send',
+    sub: 'Gmail, Outlook on the web, HubSpot, Mailchimp and Klaviyo. Only when you click, nothing leaves your browser.',
+    bullets: ['Spots platform defaults that land in Unassigned', 'Leaves merge tags alone', 'Optional redirect check: do your UTMs survive?'],
+  },
+  {
+    file: 'screenshots/4-whatsapp-link.png', shot: s4, shotWidth: 420,
+    alt: 'WhatsApp click-to-chat link builder with a tagged website link inside the message and a QR code',
+    headline: '<em>WhatsApp links</em> GA4 can actually track',
+    sub: 'A wa.me link with your message, a tagged website link inside it and a ref code, plus a QR code.',
+    bullets: ['Country code and number cleaned for you', 'GA4 verdict for the link in the message', 'QR code for print, packaging and stores'],
+  },
+  {
+    file: 'screenshots/5-team-rules-file.png', shot: s5, shotWidth: 600,
+    alt: 'Importing a team rules file in Settings with a preview of what will change',
+    headline: 'One <em>rules file</em> for the whole team',
+    sub: 'Approved sources and mediums, casing, separators and the campaign pattern in one JSON file.',
+    bullets: ['Preview every change before applying', 'Works with our Bulk UTM Link Checker', 'Unlimited client workspaces, free'],
+  },
+  {
+    file: 'screenshots/6-bulk-matrix.png', shot: s6, shotWidth: 600,
+    alt: 'Bulk matrix generating every UTM combination with a GA4 prediction per row',
     headline: 'Tag <em>hundreds of links</em> in one go',
     sub: 'Pages × sources × mediums × campaigns. Every row gets a GA4 prediction, ready for Sheets or CSV.',
-    bullets: ['Bulk matrix with misattribution flags', 'Tag every link in email HTML', 'Paste straight into Google Sheets'],
-  },
-  {
-    file: 'screenshot-4-1280x800.png', shot: s4,
-    headline: 'Every link you build, <em>searchable</em>',
-    sub: 'A local history per client workspace. Re-copy, edit or export any link in seconds.',
-    bullets: ['Search by campaign, source or URL', 'CSV and Sheets export', 'Stays in your browser, no account needed'],
-  },
-  {
-    file: 'screenshot-5-1280x800.png', shot: s5, shotWidth: 640,
-    headline: 'Naming rules your <em>whole team</em> follows',
-    sub: 'One workspace per client: approved values, locked dropdowns, campaign formulas and presets.',
-    bullets: ['Campaign name formulas with dropdowns', 'Share workspaces with a code or QR', 'Bring your own Bitly, Dub or Rebrandly key'],
+    bullets: ['Flags rows GA4 will misattribute', 'CSV upload and UTM Cleaner', 'Tag every link in email HTML'],
   },
 ];
 
+await mkdir(path.join(OUT, 'screenshots'), { recursive: true });
+await writeFile(path.join(OUT, 'screenshots', 'alt-text.json'), JSON.stringify(shots.map(({ file, alt }) => ({ file: `store/${file}`, alt })), null, 2) + '\n');
 for (const s of shots) await render(browser, screenshotHtml({ ...s, shot: dataUrl(s.shot) }), 1280, 800, s.file);
 
 // Small promo tile 440x280
@@ -319,8 +399,8 @@ await render(
     p { font-size: 19px; line-height: 1.3; max-width: 340px; }
     .t .by { margin-top: auto; font-size: 14px; font-weight: 600; color: ${BRAND.brandInk}; }
   </style></head><body><div class="t">
-    <div class="row"><span class="inv">U</span><h1>UTM Governor</h1></div>
-    <p>GA4-safe UTM links. See the channel before you ship.</p>
+    <div class="row"><span class="inv">U</span><h1>UTM Builder &amp; Checker</h1></div>
+    <p>Build and check GA4-safe UTM links, emails and WhatsApp links.</p>
     <div class="by">by The Growth Folks®</div>
   </div></body></html>`,
   440, 280, 'promo-small-440x280.png'
@@ -339,9 +419,9 @@ await render(
     .r img.shot { position: absolute; width: 420px; top: 48px; left: 100px; border-radius: 20px; border: 1px solid ${BRAND.line}; box-shadow: 0 10px 30px -12px rgb(22 24 29 / 0.18); }
   </style></head><body><div class="m">
     <div class="l">
-      <div class="brand"><img src="${ICON}"> UTM Governor <span class="by">by The Growth Folks®</span></div>
-      <h1>Build UTM links GA4 <em>actually understands</em></h1>
-      <p>Live channel prediction, naming rules, client workspaces and bulk tagging, all in your browser.</p>
+      <div class="brand"><img src="${ICON}"> UTM Builder &amp; Checker <span class="by">by The Growth Folks®</span></div>
+      <h1>Build and check UTM links GA4 <em>actually understands</em></h1>
+      <p>Channel prediction with the reason, a checker for pages and email drafts, WhatsApp links and team naming rules. Free, in your browser.</p>
     </div>
     <div class="r"><img class="shot" src="${dataUrl(s1)}"></div>
   </div></body></html>`,

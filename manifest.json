@@ -4,7 +4,7 @@
   "short_name": "UTM Builder",
   "version": "0.3.0",
   "homepage_url": "https://thegrowthfolks.com/tools/utm-builder/",
-  "description": "Build GA4-safe UTM links and check every link on a page, email draft or WhatsApp message. Free, no account.",
+  "description": "Build and check UTM links for GA4. See the channel before you share. Page and email checker, WhatsApp links, bulk and QR.",
   "minimum_chrome_version": "116",
   "icons": {
     "16": "icons/icon16.png",

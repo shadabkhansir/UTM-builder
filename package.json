@@ -6,7 +6,7 @@
   "description": "UTM Builder & Checker for GA4 \u2013 The Growth Folks\u00ae (Chrome extension)",
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "package": "mkdir -p dist && rm -f dist/utm-governor.zip && zip -r dist/utm-governor.zip manifest.json src icons",
+    "package": "mkdir -p dist && rm -f dist/utm-builder.zip && zip -r dist/utm-builder.zip manifest.json src icons",
     "test:e2e": "node --test tests/e2e/*.e2e.mjs"
   }
 }

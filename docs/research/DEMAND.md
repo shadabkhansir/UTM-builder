@@ -198,7 +198,7 @@ Use the exact phrasing searchers type:
 
 ## (c) Recommended store keyword set
 
-Title (fixed, 49 characters): **UTM Builder & Checker for GA4 – The Growth Folks®**. It already holds the three strongest head terms: "UTM Builder", "Checker" and "GA4". It is well inside the 75-character manifest `name` limit ([manifest name docs](https://developer.chrome.com/docs/extensions/reference/manifest/name)). Note: the current manifest `name` is still "UTM Governor by The Growth Folks®" (`manifest.json`). The store title only changes when the manifest does.
+Title (fixed, 49 characters): **UTM Builder & Checker for GA4 – The Growth Folks®**. It already holds the three strongest head terms: "UTM Builder", "Checker" and "GA4". It is well inside the 75-character manifest `name` limit ([manifest name docs](https://developer.chrome.com/docs/extensions/reference/manifest/name)). `manifest.json` now uses this name (v0.3.0).
 
 **Short description.** This is the manifest `description`, limited to 132 characters ([manifest description docs](https://developer.chrome.com/docs/extensions/reference/manifest/description)). Two options, both under the limit:
 - A (124 chars): `Build and check UTM links for Google Analytics 4. See the GA4 channel before you share. Bulk, QR, Meta and Google Ads ready.`
