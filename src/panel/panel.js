@@ -4,7 +4,9 @@ import { normalizeValue, validate, parseFormula, assembleFormula, resolveVariabl
 import { toTsv, toTsvRow, toCsv, toMarkdown, toHtmlLink } from '../lib/export.js';
 import { buildMatrix, tagHtml, lines } from '../lib/bulk.js';
 import { parseCsv, rowsToObjects } from '../lib/csv.js';
-import { auditGa4Export, cleanValuesFrom, cleanLinks, lintLinks } from '../lib/audit.js';
+import { auditGa4Export, cleanValuesFrom, cleanLinks } from '../lib/audit.js';
+import { initCheck } from './check.js';
+import { initWhatsApp } from './whatsapp.js';
 import { OUTPUTS, platformOutput, adobeCidUrl } from '../lib/platforms.js';
 import { BUILTIN_TEMPLATES, BUILTIN_GROUP } from '../lib/templates.js';
 import { MACROS } from '../lib/macros.js';
@@ -41,6 +43,47 @@ const ws = () => state.workspaces.find(w => w.id === state.activeWorkspaceId) ||
 const rules = () => ({ ...DEFAULT_RULES, ...(ws().rules || {}) });
 const qrStyle = () => ({ ...DEFAULT_QR, ...(ws().qr || {}), ...(form.qr || {}) });
 
+// Shared with the Check and WhatsApp tabs.
+let checker = null;
+const ctx = {
+  $,
+  ws: () => ws(),
+  rules: () => rules(),
+  settings: () => state.settings,
+  toast: msg => toast(msg),
+  plural: (n, w) => plural(n, w),
+  copy: async (text, msg) => {
+    await writeClipboard(text);
+    toast(msg);
+  },
+  download: (name, text, type) => download(name, text, type),
+  downloadBlob: (name, blob) => downloadBlob(name, blob),
+  csv: rows => rows.map(r => r.map(csvCell).join(',')).join('\r\n'),
+  currentTabUrl: async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    return tab?.url && /^https?:/.test(tab.url) ? tab.url : '';
+  },
+  openInBuild: url => {
+    form = { ...emptyForm(), url, urlManual: true, ...parseUtm(url) };
+    renderWorkspaceUi();
+    fillInputs();
+    onChange();
+    showTab('build');
+  },
+};
+
+function csvCell(v) {
+  const s = String(v ?? '');
+  const safe = /^[=+\-@]/.test(s) ? "'" + s : s; // spreadsheet formula guard
+  return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
+}
+
+function openCheckPage() {
+  showTab('check');
+  checker?.setMode('page');
+  checker?.runPage();
+}
+
 // ---------- init ----------
 
 async function init() {
@@ -55,18 +98,23 @@ async function init() {
 
   const [draft, pending] = await Promise.all([store.getDraft(), store.takePending()]);
   if (draft && draft.workspaceId === state.activeWorkspaceId) form = { ...emptyForm(), ...draft.form };
-  if (pending) await applyIncomingUrl(pending.url, pending.title);
+  if (pending && pending.action !== 'check-page') await applyIncomingUrl(pending.url, pending.title);
   else if (!form.url) await useCurrentTab();
 
   renderWorkspaceUi();
   fillInputs();
+  checker = initCheck(ctx);
+  initWhatsApp(ctx);
+  if (pending?.action === 'check-page') openCheckPage();
   render();
   setupFollowTab();
 
   chrome.storage.session.onChanged.addListener(async changes => {
     if (changes.pending?.newValue) {
       const p = await store.takePending();
-      if (p) {
+      if (p?.action === 'check-page') openCheckPage();
+      else if (p) {
+        showTab('build');
         await applyIncomingUrl(p.url, p.title);
         fillInputs();
         render();
@@ -233,7 +281,7 @@ function bindEvents() {
       workspaceId: ws().id, workspace: ws().name, field: $('reqField').value, value,
       reason: $('reqReason').value.trim(), by: state.settings.userName || '', at: Date.now(),
     });
-    await writeClipboard(`Please approve ${$('reqField').value} "${value}" for ${ws().name}. Paste this in UTM Governor → Settings → Approval requests:\n${code}`);
+    await writeClipboard(`Please approve ${$('reqField').value} "${value}" for ${ws().name}. Paste this in UTM Builder & Checker → Settings → Approval requests:\n${code}`);
     await store.logActivity('value_requested', { workspaceId: ws().id, workspace: ws().name, field: $('reqField').value, value });
     toast('Request copied — send it to your admin');
   };
@@ -329,7 +377,6 @@ function bindEvents() {
   };
 
   // Audit
-  $('a-scan').onclick = scanPage;
   $('g-file').onchange = async e => {
     const f = e.target.files[0];
     if (f) runGa4Audit(await f.text());
@@ -371,7 +418,7 @@ function persist() {
 
 function showTab(name) {
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
-  for (const t of ['build', 'bulk', 'audit', 'history']) $('tab-' + t).hidden = t !== name;
+  for (const t of ['build', 'check', 'whatsapp', 'bulk', 'history']) $('tab-' + t).hidden = t !== name;
   if (name === 'history') renderHistory();
 }
 
@@ -611,6 +658,7 @@ function render() {
   // Status is always icon + word + colour, never colour alone.
   const status = { ok: '✓ Pass', warn: '! Warning', error: '✕ Critical', idle: '' }[a.level];
   $('ga4Pill').textContent = a.channel ? `${status} · GA4 channel: ${a.channel}` : 'GA4 channel: enter source & medium';
+  $('ga4Why').textContent = a.channel ? `Why: ${a.why}.` : '';
   $('ga4Msgs').replaceChildren(
     ...a.messages.map(m => Object.assign(document.createElement('li'), { textContent: m })),
     ...a.fixes.map(fx => {
@@ -881,39 +929,6 @@ function runHtmlTagger() {
 }
 
 // ---------- audit ----------
-
-async function scanPage() {
-  $('a-scanCount').textContent = 'Scanning…';
-  let links;
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab || !/^https?:/.test(tab.url || 'https:')) throw new Error('not a web page');
-    const [{ result: found }] = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: () => [...document.querySelectorAll('a[href]')].map(a => ({ href: a.href, text: a.innerText })),
-    });
-    links = found;
-  } catch {
-    $('a-scanCount').textContent = "Can't read this tab. Click the extension icon while on the page, or turn on live link checks in Settings.";
-    return;
-  }
-  const r = lintLinks(links, ws());
-  $('a-scanCount').textContent = `${plural(r.tagged, 'tagged link')} · ${r.withProblems} with problems · ${r.untagged} untagged`;
-  $('a-scanList').replaceChildren(
-    ...r.results
-      .sort((a, b) => b.problems.length - a.problems.length)
-      .map(x => {
-        const li = document.createElement('li');
-        li.className = x.problems.length ? 'bad' : 'good';
-        const head = Object.assign(document.createElement('div'), { className: 'u', textContent: x.href });
-        const meta = Object.assign(document.createElement('div'), { className: 'hint', textContent: `${x.text ? `"${x.text}" · ` : ''}${x.channel}` });
-        const ul = document.createElement('ul');
-        ul.append(...x.problems.map(p => Object.assign(document.createElement('li'), { textContent: p })));
-        li.append(head, meta, ul);
-        return li;
-      })
-  );
-}
 
 function runGa4Audit(text) {
   const r = auditGa4Export(text);

@@ -1,11 +1,12 @@
 {
-  "name": "utm-governor",
-  "version": "0.2.0",
+  "name": "utm-builder-checker",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "UTM builder & link governance Chrome extension",
+  "description": "UTM Builder & Checker for GA4 \u2013 The Growth Folks\u00ae (Chrome extension)",
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "package": "mkdir -p dist && rm -f dist/utm-governor.zip && zip -r dist/utm-governor.zip manifest.json src icons"
+    "package": "mkdir -p dist && rm -f dist/utm-governor.zip && zip -r dist/utm-governor.zip manifest.json src icons",
+    "test:e2e": "node --test tests/e2e/*.e2e.mjs"
   }
 }

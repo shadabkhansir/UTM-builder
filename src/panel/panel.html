@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>UTM Governor</title>
+  <title>UTM Builder &amp; Checker for GA4</title>
   <link rel="stylesheet" href="../styles/tokens.css">
   <link rel="stylesheet" href="../styles/fonts.css">
   <link rel="stylesheet" href="panel.css">
@@ -12,19 +12,18 @@
   <header class="top">
     <div class="brandrow">
       <span class="mark" aria-hidden="true">TGF</span>
-      <span class="product">UTM Governor</span>
+      <span class="product">UTM Builder &amp; Checker</span>
       <button id="dock" class="icon ghost" title="Open in side panel (stays open while you work)" aria-label="Open in side panel">⇥</button>
       <button id="settings" class="icon ghost" title="Settings &amp; workspaces" aria-label="Settings">⚙</button>
     </div>
-    <div class="ctrlrow">
-      <select id="workspace" title="Client workspace" aria-label="Workspace"></select>
-      <nav class="tabs" role="tablist">
-        <button role="tab" data-tab="build" aria-selected="true">Build</button>
-        <button role="tab" data-tab="bulk">Bulk</button>
-        <button role="tab" data-tab="audit">Audit</button>
-        <button role="tab" data-tab="history">History</button>
-      </nav>
-    </div>
+    <select id="workspace" title="Client workspace" aria-label="Workspace"></select>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button role="tab" data-tab="build" aria-selected="true">Build</button>
+      <button role="tab" data-tab="check">Check</button>
+      <button role="tab" data-tab="whatsapp">WhatsApp</button>
+      <button role="tab" data-tab="bulk">Bulk</button>
+      <button role="tab" data-tab="history">History</button>
+    </nav>
   </header>
 
   <!-- BUILD -->
@@ -71,6 +70,7 @@
 
     <div id="ga4" class="ga4 idle" aria-live="polite">
       <span class="pill" id="ga4Pill">GA4 channel: —</span>
+      <div class="why" id="ga4Why"></div>
       <ul id="ga4Msgs"></ul>
     </div>
 
@@ -111,6 +111,7 @@
           <input id="f-marketing_tactic" list="dl-mt" autocomplete="off" spellcheck="false" placeholder="prospecting">
         </div>
       </div>
+      <p class="hint">GA4 shows utm_source_platform as “Manual” and doesn’t report utm_creative_format or utm_marketing_tactic yet (Google Analytics Help, 2026).</p>
       <datalist id="dl-sp"><option value="google_ads"><option value="meta_ads"><option value="tiktok_ads"><option value="linkedin_ads"><option value="microsoft_ads"><option value="snapchat_ads"><option value="x_ads"><option value="dv360"><option value="sa360"><option value="cm360"></datalist>
       <datalist id="dl-cf"><option value="image"><option value="video"><option value="carousel"><option value="text"><option value="native"><option value="display"><option value="audio"><option value="story"></datalist>
       <datalist id="dl-mt"><option value="prospecting"><option value="remarketing"><option value="retention"><option value="brand"><option value="non_brand"><option value="cross_sell"><option value="upsell"></datalist>
@@ -244,15 +245,47 @@
   </main>
 
   <!-- AUDIT -->
-  <main id="tab-audit" class="tab" hidden>
-    <section>
-      <h2>Check links on this page</h2>
-      <p class="hint">Finds every tagged link on the open page and grades it against GA4 and this workspace's rules.</p>
-      <div class="row"><button id="a-scan" class="primary">Scan this page</button><span id="a-scanCount" class="hint"></span></div>
-      <ul id="a-scanList" class="lint"></ul>
+  <main id="tab-check" class="tab" hidden>
+    <h2>UTM Checker</h2>
+    <nav class="subtabs" role="tablist" aria-label="What to check">
+      <button data-csrc="page" aria-selected="true">This page</button>
+      <button data-csrc="email">Email draft</button>
+      <button data-csrc="paste">Paste</button>
+    </nav>
+    <section data-cpanel="page">
+      <p class="hint">Grades every link on the open page against GA4's channel rules and this workspace's naming rules.</p>
+      <div class="row"><button id="k-page" class="primary">Check links on this page</button></div>
     </section>
-    <section>
-      <h2>GA4 report audit</h2>
+    <section data-cpanel="email" hidden>
+      <p id="k-editor" class="hint">Open a draft in Gmail, Outlook on the web, HubSpot, Mailchimp or Klaviyo, then check it here.</p>
+      <p class="hint">Reads the links in your open draft only when you click. Nothing leaves your browser. The first time, Chrome asks you to allow this site.</p>
+      <div class="row"><button id="k-email" class="primary">Check this draft</button></div>
+      <p id="k-espNote" class="hint" hidden></p>
+    </section>
+    <section data-cpanel="paste" hidden>
+      <p class="hint">Paste links, plain text or email HTML. Every http(s) link is checked.</p>
+      <textarea id="k-paste" rows="6" spellcheck="false" placeholder="https://acme.com/?utm_source=Facebook&amp;utm_medium=cpc …"></textarea>
+      <div class="row"><button id="k-pasteGo" class="primary">Check</button></div>
+    </section>
+    <div id="k-result" hidden>
+      <div id="k-summary" class="summary" aria-live="polite"></div>
+      <div class="row">
+        <label class="small"><input type="checkbox" id="k-problems"> Problems only</label>
+        <details class="menu" id="k-menu">
+          <summary>Actions</summary>
+          <div class="menu-pop">
+            <button id="k-copyFixed">Copy all fixed links</button>
+            <button id="k-copyHtml" hidden>Copy fixed HTML</button>
+            <button id="k-csv">Export results (CSV)</button>
+            <div class="sep"></div>
+            <button id="k-redirects">Check redirects (up to 25 links)</button>
+          </div>
+        </details>
+      </div>
+      <ul id="k-list" class="lint"></ul>
+    </div>
+    <details class="ga4audit">
+      <summary>GA4 report audit</summary>
       <p class="hint">In GA4 open Reports → Acquisition → Traffic acquisition, set the dimension to <b>Session source / medium</b>, then Share → Download CSV. Upload it here to see what lands in Unassigned or the wrong channel.</p>
       <input type="file" id="g-file" accept=".csv,text/csv" aria-label="GA4 CSV export">
       <div id="g-summary" class="hint"></div>
@@ -261,7 +294,81 @@
         <button id="g-copy">Copy table</button>
       </div>
       <div class="tablewrap" id="g-wrap" hidden><table id="g-table"></table></div>
-    </section>
+    </details>
+  </main>
+
+  <!-- WHATSAPP -->
+  <main id="tab-whatsapp" class="tab" hidden>
+    <h2>WhatsApp click-to-chat link</h2>
+    <div class="grid wa-num">
+      <div class="field">
+        <label for="w-country">Country code</label>
+        <select id="w-country"></select>
+      </div>
+      <div class="field">
+        <label for="w-number">WhatsApp number</label>
+        <input id="w-number" inputmode="tel" autocomplete="off" placeholder="98765 43210">
+      </div>
+    </div>
+    <p id="w-numberHint" class="hint">Leave the number empty to let people choose who to send it to.</p>
+    <div class="field">
+      <label for="w-message">Pre-filled message</label>
+      <textarea id="w-message" rows="4" placeholder="Hi! I'd like to know more about the winter boots: {link}"></textarea>
+      <div class="row"><button id="w-insertLink" class="small">Insert {link}</button><span class="hint">Where the tagged website link goes. Without it, the link is added at the end.</span></div>
+    </div>
+    <details id="w-linkBox" open>
+      <summary>Website link in the message</summary>
+      <div class="field">
+        <label for="w-landing">Landing page</label>
+        <div class="row">
+          <input id="w-landing" type="url" spellcheck="false" placeholder="https://acme.com/boots">
+          <button id="w-useTab" class="icon" title="Use current tab URL" aria-label="Use current tab">⟲</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="w-preset">How the link is shared</label>
+        <select id="w-preset">
+          <option value="chat">Chat or status (whatsapp / social → Organic Social)</option>
+          <option value="custom">My own source and medium</option>
+        </select>
+      </div>
+      <div class="grid">
+        <div class="field"><label for="w-source">Source</label><input id="w-source" spellcheck="false" list="dl-source"></div>
+        <div class="field"><label for="w-medium">Medium</label><input id="w-medium" spellcheck="false" list="dl-medium"></div>
+      </div>
+      <div class="grid">
+        <div class="field"><label for="w-campaign">Campaign</label><input id="w-campaign" spellcheck="false"></div>
+        <div class="field"><label for="w-content">Content</label><input id="w-content" spellcheck="false" placeholder="broadcast_a"></div>
+      </div>
+      <div id="w-ga4" class="ga4 idle" aria-live="polite"><span class="pill" id="w-ga4Pill"></span></div>
+    </details>
+    <div class="field">
+      <label for="w-ref">Ref code (optional)</label>
+      <input id="w-ref" spellcheck="false" placeholder="WA-BOOTS-OCT">
+      <p class="hint">Added as “Ref: …” so your team or CRM can see which campaign started the chat.</p>
+    </div>
+    <ul id="w-warnings" class="issues"></ul>
+    <div class="output">
+      <textarea id="w-out" readonly rows="3" aria-label="WhatsApp link"></textarea>
+      <p class="hint">UTMs on the wa.me link itself never reach GA4, because the click opens WhatsApp, not your site. We tag the website link inside your message.</p>
+      <div class="actions">
+        <button id="w-copy" class="primary">Copy WhatsApp link</button>
+        <details class="menu" id="w-menu">
+          <summary>More</summary>
+          <div class="menu-pop">
+            <button id="w-copyMsg">Copy message only</button>
+            <button id="w-copyLanding">Copy tagged website link</button>
+            <button id="w-open">Open in WhatsApp</button>
+          </div>
+        </details>
+      </div>
+      <div class="tools"><button id="w-qrBtn">QR code</button></div>
+      <div id="w-qr" class="qr" hidden>
+        <canvas id="w-qrCanvas" width="240" height="240"></canvas>
+        <p class="hint" id="w-qrDest"></p>
+        <div class="row"><button id="w-qrPng" class="small">Download PNG</button><button id="w-qrSvg" class="small">Download SVG</button></div>
+      </div>
+    </div>
   </main>
 
   <!-- HISTORY -->
@@ -284,7 +391,7 @@
     <nav class="tgf-links" aria-label="The Growth Folks links">
       <a href="https://thegrowthfolks.com/tools/utm-builder?utm_source=chrome-extension&amp;utm_medium=referral&amp;utm_campaign=utm-builder&amp;utm_content=panel-footer" target="_blank" rel="noopener">Help</a>
       <a href="https://thegrowthfolks.com/tools/utm-builder/privacy?utm_source=chrome-extension&amp;utm_medium=referral&amp;utm_campaign=utm-builder&amp;utm_content=panel-footer" target="_blank" rel="noopener">Privacy</a>
-      <a href="mailto:team@thegrowthfolks.com?subject=UTM%20Governor">Contact</a>
+      <a href="mailto:team@thegrowthfolks.com?subject=UTM%20Builder%20%26%20Checker">Contact</a>
       <a href="https://thegrowthfolks.com/learn?utm_source=chrome-extension&amp;utm_medium=referral&amp;utm_campaign=utm-builder&amp;utm_content=panel-footer" target="_blank" rel="noopener">Learn growth marketing</a>
     </nav>
   </footer>

@@ -78,6 +78,12 @@ export const BUILTIN_TEMPLATES = [
     values: { source: 'linkedin', medium: 'social' },
   },
   {
+    id: 'bt-whatsapp',
+    name: 'WhatsApp chat or status',
+    channel: 'Organic Social',
+    values: { source: 'whatsapp', medium: 'social' },
+  },
+  {
     id: 'bt-sms',
     name: 'SMS',
     channel: 'SMS',

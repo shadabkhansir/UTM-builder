@@ -36,3 +36,4 @@ label.btn:hover { border-color: var(--ink); }
 #codeQr { border: 1px solid var(--line); border-radius: var(--r-sm); align-self: flex-start; }
 #logTable td { font-size: 12px; }
 .wrap > .tgf { border: 0; padding: var(--s-1) 2px; }
+.preview { display: flex; flex-direction: column; gap: var(--s-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: var(--s-3); }

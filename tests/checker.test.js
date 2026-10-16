@@ -146,3 +146,9 @@ test('2,000 links are graded inside the performance budget', () => {
   assert.equal(results.length, 2000);
   assert.ok(ms < 1500, `took ${ms}ms`); // 300 ms target on a laptop; CI containers are slower
 });
+
+test('utmsLost compares original and final URLs', async () => {
+  const { utmsLost } = await import('../src/lib/net.js');
+  assert.deepEqual(utmsLost('https://a.com/?utm_source=x&utm_medium=y', 'https://www.a.com/home'), ['utm_source', 'utm_medium']);
+  assert.deepEqual(utmsLost('https://a.com/?utm_source=x', 'https://a.com/?utm_source=x&gclid=1'), []);
+});

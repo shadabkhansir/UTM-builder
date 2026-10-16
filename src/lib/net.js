@@ -166,21 +166,32 @@ export async function checkLink(url, { timeoutMs = 8000 } = {}) {
       res = await fetch(url, { method: 'GET', redirect: 'follow', signal: ctrl.signal, credentials: 'omit' });
     }
     const finalUrl = res.url;
-    if (res.status >= 400) return { state: 'error', status: res.status, finalUrl, message: `Returns ${res.status}` };
-    if (res.redirected && stripQuery(finalUrl) !== stripQuery(url)) {
-      const lost = !new URL(finalUrl).searchParams.has('utm_source') && new URL(url).searchParams.has('utm_source');
-      return {
-        state: 'redirect',
-        status: res.status,
-        finalUrl,
-        message: lost ? `Redirects to ${short(finalUrl)} and DROPS the UTMs` : `Redirects to ${short(finalUrl)}`,
-      };
+    const lost = utmsLost(url, finalUrl);
+    if (res.status >= 400) return { state: 'error', status: res.status, finalUrl, lost, message: `Returns ${res.status}` };
+    if (res.redirected || finalUrl !== url) {
+      if (lost.length) {
+        return { state: 'error', status: res.status, finalUrl, lost, message: `Redirects to ${short(finalUrl)} and drops ${lost.join(', ')}` };
+      }
+      if (stripQuery(finalUrl) !== stripQuery(url)) {
+        return { state: 'redirect', status: res.status, finalUrl, lost, message: `Redirects to ${short(finalUrl)}; UTMs survive` };
+      }
     }
-    return { state: 'ok', status: res.status, finalUrl, message: `${res.status} OK` };
+    return { state: 'ok', status: res.status, finalUrl, lost, message: `${res.status} OK` };
   } catch (e) {
     return { state: 'error', message: e.name === 'AbortError' ? 'Timed out' : 'Could not reach this URL' };
   } finally {
     clearTimeout(timer);
+  }
+}
+
+// UTM parameters present on the original link but missing or changed on the final one.
+export function utmsLost(original, final) {
+  try {
+    const a = new URL(original).searchParams;
+    const b = new URL(final).searchParams;
+    return [...new Set([...a.keys()].filter(k => k.toLowerCase().startsWith('utm_') && b.get(k) !== a.get(k)))];
+  } catch {
+    return [];
   }
 }
 
