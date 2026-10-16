@@ -16,13 +16,14 @@ Build and check UTM links for GA4. See the channel before you share. Page and em
 
 **Language:** English
 
-**Screenshots** (1280×800, in `store/screenshots/`, alt text in `store/screenshots/alt-text.json`):
+**Screenshots** (1280×800, in `store/screenshots/`, alt text in `store/screenshots/alt-text.json`). The Chrome Web Store accepts at most 5, so upload these in this order:
 1. `1-build-ga4-channel.png`
 2. `2-check-page.png`
 3. `3-check-email-draft.png`
 4. `4-whatsapp-link.png`
-5. `5-team-rules-file.png`
-6. `6-bulk-matrix.png`
+5. `6-bulk-matrix.png`
+
+`5-team-rules-file.png` is used on the website only.
 
 **Promo tiles:** `store/promo-small-440x280.png`, `store/marquee-1400x560.png`.
 
