@@ -1,4 +1,7 @@
 import * as store from '../lib/storage.js';
+import { getPlan, LIMITS, upgradeUrl, appendUpgrade, planLabel, launchProActive } from '../lib/plan.js';
+import { LICENSE_CONFIG } from '../lib/license-config.js';
+import { activateLicense, deactivateLicense, getLicense, revalidateIfDue, planFromLicense } from '../lib/license.js';
 import { DEFAULT_RULES, FIELDS, assembleFormula, normalizeValue } from '../lib/rules.js';
 import { predictChannel, sourceCategory } from '../lib/ga4.js';
 import { SHORTENERS, shorten, LINK_CHECK_ORIGINS, webhookOrigin, sendWebhook } from '../lib/net.js';
@@ -32,8 +35,48 @@ function doPost(e) {
   return ContentService.createTextOutput('ok');
 }`;
 
+let plan = 'free';
+const limits = () => LIMITS[plan];
+
+// Shows why a Pro action didn't run, with an upgrade link, in the status line next to it. True = blocked.
+function needPro(statusId, where, what) {
+  if (plan === 'pro') return false;
+  status(statusId, `${what} is part of Pro.`, 'warn');
+  appendUpgrade($(statusId), where);
+  return true;
+}
+
+async function renderPlan() {
+  plan = await getPlan().catch(() => 'free');
+  $('planName').textContent = planLabel(plan);
+  document.querySelectorAll('[data-pro]').forEach(el => { el.hidden = plan === 'pro'; });
+  $('licBuy').href = upgradeUrl('options-plan');
+  $('licManage').href = LICENSE_CONFIG.manageUrl || upgradeUrl('options-manage');
+  const lic = await getLicense();
+  const active = planFromLicense(lic) === 'pro';
+  const { installedVersion } = await chrome.storage.local.get('installedVersion');
+  const until = LICENSE_CONFIG.launchUsersProUntil
+    ? new Date(`${LICENSE_CONFIG.launchUsersProUntil}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+    : '';
+  $('licKey').value = lic?.key ? `${lic.key.slice(0, 4)}…${lic.key.slice(-4)}` : '';
+  $('licKey').disabled = !!lic;
+  $('licActivate').hidden = !!lic;
+  $('licDeactivate').hidden = !lic;
+  $('licBuy').hidden = active;
+  $('licManage').hidden = !lic;
+  $('licStatus').className = 'hint';
+  $('licStatus').textContent = active
+    ? `Active: ${lic.productName || 'Pro'}. Last checked ${new Date(lic.validatedAt).toLocaleDateString('en-GB')}.`
+    : lic
+      ? 'This licence is no longer active (expired, cancelled or refunded). Deactivate it here and enter a current key.'
+      : launchProActive(installedVersion)
+        ? `You installed during the free launch, so Pro stays on until ${until}. Add a licence key before then to keep it.`
+        : 'Buy Pro on thegrowthfolks.com and the key activates itself, or paste it here.';
+}
+
 async function init() {
   state = await store.loadState();
+  await renderPlan();
   editingId = state.activeWorkspaceId;
   applyTheme();
   $('rRequired').replaceChildren(
@@ -54,6 +97,7 @@ async function init() {
   bind();
   render();
   renderLog();
+  revalidateIfDue().catch(() => {}).finally(renderPlan);
 }
 
 function applyTheme() {
@@ -288,7 +332,21 @@ function bind() {
     render();
     renderLog();
   };
+  $('licActivate').onclick = async () => {
+    $('licActivate').disabled = true;
+    status('licStatus', 'Checking…', '');
+    const r = await activateLicense($('licKey').value);
+    $('licActivate').disabled = false;
+    if (!r.ok) return status('licStatus', r.error, 'err');
+    await renderPlan();
+    toast('Pro is on');
+  };
+  confirmButton($('licDeactivate'), () => 'Click again to deactivate', async () => {
+    await deactivateLicense();
+    await renderPlan();
+  });
   $('wsAdd').onclick = async () => {
+    if (state.workspaces.length >= limits().workspaces && needPro('wsStatus', 'workspaces', 'More than one workspace')) return;
     const w = store.defaultWorkspace(`Client ${state.workspaces.length + 1}`);
     state.workspaces.push(w);
     await store.saveWorkspaces(state.workspaces);
@@ -298,6 +356,7 @@ function bind() {
     $('wsName').select();
   };
   $('wsDup').onclick = async () => {
+    if (state.workspaces.length >= limits().workspaces && needPro('wsStatus', 'workspaces', 'More than one workspace')) return;
     const w = { ...structuredClone(cur()), id: store.uid(), name: `${cur().name} copy`, lock: null };
     state.workspaces.push(w);
     await store.saveWorkspaces(state.workspaces);
@@ -396,6 +455,7 @@ function bind() {
 
   // Webhook
   $('whGrant').onclick = async () => {
+    if (needPro('whStatus', 'webhook', 'Sending links to a webhook')) return;
     const origin = webhookOrigin($('whUrl').value.trim());
     if (!origin) return status('whStatus', 'Enter an https:// URL first', 'err');
     const ok = await chrome.permissions.request({ origins: [origin] });
@@ -403,6 +463,7 @@ function bind() {
     status('whStatus', ok ? 'Webhook allowed' : 'Permission not granted', ok ? 'ok' : 'err');
   };
   $('whTest').onclick = async () => {
+    if (needPro('whStatus', 'webhook', 'Sending links to a webhook')) return;
     await save();
     status('whStatus', 'Sending…', '');
     const r = await sendWebhook(cur().webhook, {
@@ -419,6 +480,7 @@ function bind() {
 
   // Lock
   $('lockBtn').onclick = async () => {
+    if (needPro('lockStatus', 'admin-lock', 'The admin lock')) return;
     const pin = $('lockPin').value.trim();
     if (pin.length < 4) return toast('Use a PIN of at least 4 characters');
     await patch({ lock: await makeLock(pin) });
@@ -444,6 +506,7 @@ function bind() {
 
   // Share codes
   $('codeMake').onclick = async () => {
+    if (needPro('codeStatus', 'workspace-code', 'Creating workspace codes')) return;
     const code = await encodeWorkspace(cur());
     $('codeOut').value = code;
     $('codeOut').hidden = false;
@@ -471,6 +534,7 @@ function bind() {
   // Team rules file (docs/RULES_SCHEMA.md)
   let pendingRules = null;
   $('rulesExport').onclick = () => {
+    if (needPro('rulesStatus', 'rules-export', 'Exporting a team rules file')) return;
     const file = toRulesFile(cur());
     downloadText(`utm-rules-${slug(cur().name)}.json`, JSON.stringify(file, null, 2), 'application/json');
     store.logActivity('rules_exported', { workspaceId: cur().id, workspace: cur().name });
@@ -599,6 +663,13 @@ async function mergeWorkspaces(list) {
       w.qr = { ...w.qr, logo: w.qr?.logo || mine.qr?.logo || '' };
       state.workspaces[i] = w;
       updated++;
+    } else if (state.workspaces.length >= limits().workspaces) {
+      // Free has one workspace: a teammate's workspace replaces it (importing stays free, so a team pays once).
+      if (!confirm(`The free plan has one workspace. Replace "${state.workspaces[0].name}" with "${w.name}"? Pro keeps both.`)) continue;
+      state.workspaces = [w];
+      editingId = w.id;
+      await store.setActiveWorkspace(w.id);
+      added++;
     } else {
       state.workspaces.push(w);
       added++;

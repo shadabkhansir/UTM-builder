@@ -105,6 +105,11 @@ export function initCheck(ctx) {
   }
 
   async function runEmail() {
+    if (!ctx.limits().emailDraft) {
+      summaryMessage('Checking a draft inside Gmail, Outlook, HubSpot, Mailchimp or Klaviyo is part of Pro. On Free, copy the email’s HTML and use Paste.');
+      ctx.appendUpgrade($('k-summary'), 'email-draft');
+      return;
+    }
     $('k-email').disabled = true;
     try {
       const tab = await activeTab();
