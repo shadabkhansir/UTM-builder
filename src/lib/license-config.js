@@ -22,9 +22,15 @@ const MODES = {
     manageUrl: 'https://test.customer.dodopayments.com/login/bus_0NpnX11SKy0ofT8uayAT6',
   },
   live: {
-    storeId: null, // fill in from Dodo live mode before setting MODE = 'live'
-    products: {},
-    bundleProducts: {},
+    storeId: null, // live business ID (Dodo dashboard, live mode → Settings → Business) before setting MODE = 'live'
+    products: {
+      pdt_0Npxp5e128Czc5gg4xCyJ: 'pro', // UTM Builder & Checker Pro (Monthly)
+      pdt_0Npxp6JQuMbluvonrXaL7: 'pro', // UTM Builder & Checker Pro (Yearly)
+    },
+    bundleProducts: {
+      pdt_0Npxp6rD3OAx9RfjNonQF: 'pro', // TGF All-Access (Monthly)
+      pdt_0Npxp2GlMXBZyebLIJbn1: 'pro', // TGF All-Access (Yearly)
+    },
     manageUrl: null, // 'https://customer.dodopayments.com/login/<live business ID>'
   },
 };
