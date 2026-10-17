@@ -168,6 +168,17 @@ test('Settings: rules file export, then import shows changes and applies', async
   await opt.goto(`chrome-extension://${extId}/src/options/options.html`);
   await opt.waitForTimeout(300);
   assert.match(await opt.textContent('#rulesAsOf'), /13 May 2026/);
+  // Free: exporting a rules file is Pro, with an upgrade link to the pricing page.
+  assert.equal(await opt.textContent('#planName'), 'Free');
+  await opt.click('#rulesExport');
+  assert.match(await opt.textContent('#rulesStatus'), /part of Pro/);
+  assert.match(await opt.getAttribute('#rulesStatus a.upgrade', 'href'), /\/tools\/utm-builder\/pricing\/\?.*utm_content=rules-export/);
+  // Pro: a validated licence in storage (what activateLicense saves after Dodo says yes).
+  await opt.evaluate(() => chrome.storage.local.set({ license: { key: 'TGF-TEST-UTM-PRO-0001', instanceId: 'lki_test', plan: 'pro', activatedPlan: 'pro', valid: true, status: 'active', productName: 'UTM Builder & Checker Pro (Monthly)', validatedAt: Date.now(), checkedAt: Date.now() } }));
+  await opt.reload();
+  await opt.waitForTimeout(300);
+  assert.equal(await opt.textContent('#planName'), 'Pro');
+  assert.match(await opt.textContent('#licStatus'), /Active: UTM Builder & Checker Pro/);
   const [dl] = await Promise.all([opt.waitForEvent('download'), opt.click('#rulesExport')]);
   const file = JSON.parse(readFileSync(await dl.path(), 'utf8'));
   assert.equal(file.type, 'tgf.utm-rules');
@@ -187,5 +198,26 @@ test('Settings: rules file export, then import shows changes and applies', async
   assert.equal(stored.rules.lockMediums, true);
   assert.equal(stored.campaignFormula, '[date:yyyy]-[date:mm]_[product]');
   assert.deepEqual(errors, []);
+  await opt.evaluate(() => chrome.storage.local.remove('license'));
   await opt.close();
+});
+
+test('Free plan: bulk shows the first 10 links, email draft check asks for Pro', async () => {
+  const { page, errors } = await openPanel();
+  await page.click('[data-tab="bulk"]');
+  await page.fill('#b-urls', 'https://acme.com/a\nhttps://acme.com/b\nhttps://acme.com/c');
+  await page.fill('#b-source', 'google\nfacebook\nnewsletter\nlinkedin');
+  await page.fill('#b-medium', 'cpc');
+  await page.fill('#b-campaign', 'spring');
+  await page.click('#b-go');
+  await page.waitForSelector('#b-result:not([hidden])');
+  assert.match(await page.textContent('#b-count'), /first 10 of 12/);
+  assert.equal(await page.locator('#b-table tr').count(), 11, 'header + 10 rows');
+  await page.click('[data-tab="check"]');
+  assert.equal(await page.textContent('[data-csrc="email"]'), 'Email draft (Pro)');
+  await page.click('[data-csrc="email"]');
+  await page.click('#k-email');
+  assert.match(await page.textContent('#k-summary'), /part of Pro/);
+  assert.deepEqual(errors, []);
+  await page.close();
 });

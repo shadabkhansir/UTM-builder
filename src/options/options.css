@@ -37,3 +37,8 @@ label.btn:hover { border-color: var(--ink); }
 #logTable td { font-size: 12px; }
 .wrap > .tgf { border: 0; padding: var(--s-1) 2px; }
 .preview { display: flex; flex-direction: column; gap: var(--s-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: var(--s-3); }
+
+/* Upgrade prompts (plan.js appendUpgrade) */
+.upgrade { color: var(--brand); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.pro-tag { display: inline-block; margin-left: var(--s-1); padding: 0 var(--s-1); border-radius: var(--r-sm); background: var(--accent-soft); color: var(--accent-ink); font-size: var(--t-xs); font-weight: 600; vertical-align: middle; }
+.pro-tag[hidden] { display: none; }

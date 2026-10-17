@@ -13,7 +13,7 @@ The extension was renamed from "UTM Governor" and gained a link checker, an emai
 2. **Screenshots:** delete `src/assets/tools/utm-builder/screenshot-1.png` to `screenshot-5.png` and add the six new 1280×800 PNGs from `store/screenshots/` in the utm-builder repo (branch `claude/utm-builder-checker`), keeping their file names. If you can't reach that repo, ask the user to upload them.
 3. **Old name:** update the link text in `src/content/blog/growth-marketing-vs-performance-marketing.md` (line 137, "UTM Governor") to "UTM Builder & Checker". After your edits, `grep -rn "UTM Governor" src` should return nothing.
 4. **Store status:** the Chrome Web Store listing isn't live. Leave `storeUrl` empty so the page shows "Coming soon".
-5. **Pricing:** everything is free. No account, no paid plan, no licence check. Don't add a Pro, pricing or "upgrade" section to any of these pages. Paid features come later, once there's a customer base.
+5. **Pricing (v0.4.0):** Free plus Pro at $6/month or $60/year with a 7-day free trial, sold through Dodo Payments. Free: building and checking links, GA4 channel check, page and pasted-email checks, WhatsApp links, QR codes, one workspace, bulk runs of up to 10 links. Pro: unlimited workspaces, exporting rules files and workspace codes, the admin lock, email draft checks, unlimited bulk, webhooks. Upgrade links open `/tools/utm-builder/pricing/` with `utm_medium=upgrade&utm_content=<prompt>` (workspaces, webhook, admin-lock, workspace-code, rules-export, bulk-limit, email-draft, options-plan). Dodo checkout returns to `/tools/utm-builder/activated/`, which hands the key to the extension (`externally_connectable`). Installs from before v0.4.0 keep Pro until 31 January 2027. The privacy policy must add the licence check (see the `data` entry in the web repo).
 6. **Check:** `npm run build` (exam, CSP and brand checks) and `npx astro check` must pass with 0 errors. Look at all three pages in light and dark mode at desktop and phone width.
 7. Open a PR in `shadabkhansir/web`; don't merge (merging to `master` deploys).
 
@@ -121,6 +121,14 @@ The extension opens `https://thegrowthfolks.com/tools/utm-builder/welcome/` (tra
 `docs/RULES_SCHEMA.md` defines `tgf.utm-rules` v1. The website's Bulk UTM Link Checker (`tgf-bulk-utm-checker`, not created yet) should read and write the same file, so a team can export rules from either tool and import them into the other.
 
 ## Changelog
+
+**0.4.0**
+- Pro plan through Dodo Payments licence keys (`src/lib/license.js`, shared with Pixel & Tag Checker; per-extension settings in `src/lib/license-config.js`, currently **test mode**).
+- Settings → Plan: activate, deactivate, manage subscription. Upgrade prompts at each Pro limit.
+- Free limits: one workspace (importing a teammate's workspace replaces it), bulk results capped at 10 rows, no email draft check, no webhook, no rules-file export, workspace code or admin lock. Imports stay free so a team pays once.
+- Installs from before 0.4.0 keep Pro until 31 January 2027 (`installedVersion` stored locally on update).
+- `externally_connectable` for thegrowthfolks.com so the thank-you page can activate the key.
+- `npm run test:license` checks a real key against Dodo test mode.
 
 **0.3.0**
 - Renamed from "UTM Governor" to "UTM Builder & Checker for GA4 – The Growth Folks®" (short name "UTM Builder"). The extension ID, storage keys and the workspace export format are unchanged.

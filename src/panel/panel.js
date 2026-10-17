@@ -14,6 +14,7 @@ import { shorten, checkLink, landingCheck, fetchClicks, sendWebhook } from '../l
 import { encodeRequest } from '../lib/share.js';
 import { drawQr as renderQr, qrSvg, DEFAULT_QR } from '../lib/qrstyle.js';
 import * as store from '../lib/storage.js';
+import { getPlan, LIMITS, appendUpgrade } from '../lib/plan.js';
 
 const $ = id => document.getElementById(id);
 
@@ -29,6 +30,8 @@ let ga4Combos = [];
 let checkTimer = null;
 let lastPresetId = '';
 let blocked = true; // a rule error or invalid URL: no copying, no QR
+let plan = 'free';
+const limits = () => LIMITS[plan];
 
 function emptyForm() {
   return {
@@ -52,6 +55,8 @@ const ctx = {
   settings: () => state.settings,
   toast: msg => toast(msg),
   plural: (n, w) => plural(n, w),
+  limits: () => limits(),
+  appendUpgrade: (el, where, label) => appendUpgrade(el, where, label),
   copy: async (text, msg) => {
     await writeClipboard(text);
     toast(msg);
@@ -90,7 +95,7 @@ async function init() {
   const isPopup = chrome.extension.getViews({ type: 'popup' }).includes(window);
   if (!isPopup) document.body.classList.add('side');
 
-  state = await store.loadState();
+  [state, plan] = await Promise.all([store.loadState(), getPlan().catch(() => 'free')]);
   applyTheme();
   renderWorkspaces();
   renderMacroPlatforms();
@@ -103,6 +108,7 @@ async function init() {
 
   renderWorkspaceUi();
   fillInputs();
+  if (!limits().emailDraft) document.querySelector('[data-csrc="email"]').textContent = 'Email draft (Pro)';
   checker = initCheck(ctx);
   initWhatsApp(ctx);
   if (pending?.action === 'check-page') openCheckPage();
@@ -741,7 +747,7 @@ async function recordLink(kind) {
   const remember = Object.fromEntries(FIELDS.map(f => [f, form[f]]).filter(([, val]) => val));
   store.rememberHost(ws().id, host, { values: remember, presetId: lastPresetId });
   store.logActivity('link_created', { workspaceId: ws().id, workspace: ws().name, url: rec.shortUrl || rec.url, kind, channel: rec.channel });
-  if (ws().webhook?.url) {
+  if (ws().webhook?.url && limits().webhook) {
     sendWebhook(ws().webhook, { ...rec, createdAt: new Date().toISOString() }).then(r => r.ok || toast(`Webhook: ${r.error}`));
   }
 }
@@ -848,9 +854,13 @@ function downloadSvg() {
 // ---------- bulk ----------
 
 function renderBulk(rows, summary) {
+  const max = limits().bulkRows;
+  const over = rows.length > max ? rows.length : 0;
+  if (over) rows = rows.slice(0, max);
   bulkRows = rows;
   $('b-result').hidden = !rows.length && !summary;
-  $('b-count').textContent = summary;
+  $('b-count').textContent = over ? `${summary} · Free shows the first ${max} of ${over}.` : summary;
+  if (over) appendUpgrade($('b-count'), 'bulk-limit', 'Get every row with Pro');
   const head = ['Source', 'Medium', 'Campaign', 'Content', 'GA4 channel', 'Note', 'URL'];
   const thead = document.createElement('tr');
   thead.append(...head.map(h => Object.assign(document.createElement('th'), { textContent: h })));

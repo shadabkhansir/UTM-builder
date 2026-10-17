@@ -16,11 +16,30 @@
       <a class="tgf-mark" href="https://thegrowthfolks.com/tools/utm-builder?utm_source=chrome-extension&amp;utm_medium=referral&amp;utm_campaign=utm-builder&amp;utm_content=options" target="_blank" rel="noopener">by <strong>The Growth Folks®</strong></a>
     </div>
     <nav class="toc" aria-label="Sections">
-      <a href="#s-ws">Workspaces</a><a href="#s-rules">Naming rules</a><a href="#s-values">Approved values</a><a href="#s-formula">Campaign formula</a>
+      <a href="#s-plan">Plan</a><a href="#s-ws">Workspaces</a><a href="#s-rules">Naming rules</a><a href="#s-values">Approved values</a><a href="#s-formula">Campaign formula</a>
       <a href="#s-presets">Presets &amp; import</a><a href="#s-requests">Approvals</a><a href="#s-short">Shortener</a><a href="#s-qr">QR codes</a>
       <a href="#s-hook">Webhook &amp; Sheets</a><a href="#s-adobe">Adobe</a><a href="#s-lock">Admin lock</a><a href="#s-share">Share</a>
       <a href="#s-general">General</a><a href="#s-log">Activity log</a>
     </nav>
+
+    <section class="card" id="s-plan">
+      <h2>Plan</h2>
+      <p>Current plan: <strong id="planName">Free</strong></p>
+      <p class="hint">Free covers building links, the GA4 channel check, checking any page or pasted email, WhatsApp links, QR codes and bulk runs of up to 10 links. Pro adds unlimited client workspaces, sharing rules with your team (rules file, workspace codes and the admin lock), checking drafts inside Gmail, Outlook, HubSpot, Mailchimp and Klaviyo, bulk runs of any size and webhooks. 7-day free trial.</p>
+      <div class="field">
+        <label for="licKey">Licence key</label>
+        <div class="row">
+          <input id="licKey" spellcheck="false" autocomplete="off" placeholder="Paste the key from your purchase email">
+          <button id="licActivate" class="primary">Activate</button>
+        </div>
+      </div>
+      <p id="licStatus" class="hint" aria-live="polite"></p>
+      <div class="row">
+        <a id="licBuy" class="btn" target="_blank" rel="noopener">See Pro plans</a>
+        <a id="licManage" class="btn" target="_blank" rel="noopener">Manage subscription</a>
+        <button id="licDeactivate" class="ghost" hidden>Deactivate on this browser</button>
+      </div>
+    </section>
 
     <section class="card" id="s-ws">
       <h2>Workspaces</h2>
@@ -31,6 +50,7 @@
         <button id="wsDup">Duplicate</button>
         <button id="wsDel" class="ghost">Delete</button>
       </div>
+      <p id="wsStatus" class="hint" aria-live="polite"></p>
       <div id="lockBanner" class="banner" hidden>
         <span>🔒 Rules for this workspace are locked by an admin.</span>
         <input id="unlockPin" type="password" inputmode="numeric" placeholder="Admin PIN" aria-label="Admin PIN">
@@ -166,7 +186,7 @@
     </section>
 
     <section class="card" id="s-hook">
-      <h2>Webhook &amp; Google Sheets</h2>
+      <h2>Webhook &amp; Google Sheets <span class="pro-tag" data-pro>Pro</span></h2>
       <p class="hint">Every link you copy or shorten in this workspace is sent here. Works with Zapier, Make, Slack incoming webhooks, or a Google Sheet via Apps Script.</p>
       <div class="grid">
         <div class="field"><label for="whUrl">Webhook URL (https)</label><input id="whUrl" spellcheck="false" placeholder="https://hooks.zapier.com/…"></div>
@@ -204,11 +224,12 @@
     </fieldset>
 
     <section class="card" id="s-lock">
-      <h2>Admin lock</h2>
+      <h2>Admin lock <span class="pro-tag" data-pro>Pro</span></h2>
       <p class="hint">Set a PIN to lock this workspace's rules, approved values, formula and presets. Teammates who import it can build links but can't change the rules. This prevents accidental changes; it is not a security control.</p>
       <div class="row" id="lockSet">
         <input id="lockPin" type="password" inputmode="numeric" placeholder="New PIN (4+ digits)" aria-label="New PIN">
         <button id="lockBtn">Lock workspace</button>
+        <span id="lockStatus" class="hint"></span>
       </div>
       <div class="row" id="lockClear" hidden>
         <span class="hint">Locked. Unlock above to edit, or remove the lock.</span>
@@ -218,18 +239,19 @@
 
     <section class="card" id="s-share">
       <h2>Share with your team</h2>
-      <h3>Team rules file</h3>
+      <h3>Team rules file <span class="pro-tag" data-pro>Export: Pro</span></h3>
       <p class="hint">One JSON file with this workspace's naming rules: casing, separators, approved sources and mediums, domains and the campaign pattern. The same file works in The Growth Folks® Bulk UTM Link Checker. Presets, keys and webhooks aren't included.</p>
       <div class="row">
         <button id="rulesExport">Export rules file</button>
         <label class="btn">Import rules file… <input type="file" id="rulesFile" accept="application/json,.json" hidden></label>
+        <span id="rulesStatus" class="hint"></span>
       </div>
       <div id="rulesPreview" class="preview" hidden>
         <p id="rulesSummary" class="hint"></p>
         <ul id="rulesChanges" class="issues"></ul>
         <div class="row"><button id="rulesApply" class="primary">Apply to this workspace</button><button id="rulesCancel" class="ghost">Cancel</button></div>
       </div>
-      <h3>Workspace code</h3>
+      <h3>Workspace code <span class="pro-tag" data-pro>Create: Pro</span></h3>
       <p class="hint">A workspace code holds the rules, values, presets and lock — never API keys or webhook URLs. Send it in Slack or show the QR; teammates paste it below.</p>
       <div class="row"><button id="codeMake">Create workspace code</button><button id="codeCopy" disabled>Copy code</button></div>
       <textarea id="codeOut" rows="3" readonly spellcheck="false" hidden></textarea>

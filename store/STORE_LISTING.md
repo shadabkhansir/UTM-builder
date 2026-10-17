@@ -1,6 +1,6 @@
 # Chrome Web Store listing: UTM Builder & Checker for GA4 – The Growth Folks®
 
-Everything below is ready to paste into the Chrome Web Store developer dashboard. It was written against the code in this repo (manifest **v0.3.0**). If the manifest, permissions or network code change, update the permission and data sections to match.
+Everything below is ready to paste into the Chrome Web Store developer dashboard. It was written against the code in this repo (manifest **v0.4.0**, the first paid build). If the manifest, permissions or network code change, update the permission and data sections to match.
 
 ---
 
@@ -34,10 +34,10 @@ Rejected once for keyword spam (2026-10-16): lists of email, ad and tool brand n
 ```
 Build UTM links that Google Analytics 4 understands, and check the ones you already have, before they go live.
 
-UTM Builder & Checker is a free Chrome extension from The Growth Folks®. It shows which GA4 channel each link will be reported under, and why, using Google's published default channel group rules. It also checks links against your team's naming convention.
+UTM Builder & Checker is a Chrome extension from The Growth Folks®, free to use with an optional Pro plan. It shows which GA4 channel each link will be reported under, and why, using Google's published default channel group rules. It also checks links against your team's naming convention.
 
 WHY IT EXISTS
-One wrong value quietly breaks your reports. A source GA4 doesn't recognise turns paid social traffic into "Paid Other". A medium like "campaign" lands in "Unassigned". UTMs placed after a "#" never reach GA4 at all. This extension catches those mistakes and gives you the corrected link.
+One wrong value breaks your reports, and nothing warns you. A source GA4 doesn't recognise turns paid social traffic into "Paid Other". A medium like "campaign" lands in "Unassigned". UTMs placed after a "#" never reach GA4 at all. This extension catches those mistakes and gives you the corrected link.
 
 BUILD
 • See the GA4 channel and the rule behind it as you type
@@ -49,7 +49,7 @@ BUILD
 
 CHECK
 • This page: check every link on the open page and locate any of them with one click
-• Email drafts: check the links in a draft in your webmail or email marketing editor before you send. It reads links only when you click, and nothing leaves your browser
+• Email drafts (Pro): check the links in a draft in your webmail or email marketing editor before you send. It reads links only when you click, and nothing leaves your browser
 • Paste: check a list of links or a whole email's HTML, then copy the corrected HTML
 • Finds missing UTMs, UTMs after #, a second "?", encoded macros, double encoding, case and spacing problems, duplicates, click IDs and naming-rule breaks
 • Critical, warning and pass levels; merge tags are marked as unverifiable rather than broken
@@ -61,16 +61,20 @@ WHATSAPP LINKS
 • QR codes for print, packaging and shop windows
 
 FOR TEAMS AND AGENCIES
-• Unlimited client workspaces, each with approved sources and mediums, locked options, allowed domains and a campaign pattern
-• A shareable rules file so the whole team uses the same names
+• Workspaces with approved sources and mediums, locked options, allowed domains and a campaign pattern
+• A shareable rules file so the whole team uses the same names. Teammates import it for free
 • Bulk link builder, CSV upload, UTM cleaner and an email HTML tagger
 • Optional short links with your own link-shortener API key, styled QR codes and webhooks
 • Searchable history with CSV export
 
-PRIVACY
-No account and no server. Your workspaces, rules and history stay in your browser. The extension makes a network request only when you ask it to: to your own link shortener, to the pages you check, or to your own webhook. It contains no analytics or tracking.
+FREE AND PRO
+Free: building and checking links, the GA4 channel check, page and pasted-email checks, WhatsApp links, QR codes, one workspace and bulk runs of up to 10 links.
+Pro ($6 a month or $60 a year, 7-day free trial): unlimited client workspaces, exporting rules files and workspace codes, the admin lock, email draft checks, bulk runs of any size and webhooks. Buy on thegrowthfolks.com and the key activates itself, or paste it in Settings. No account needed. If you installed before Pro existed, Pro stays on until 31 January 2027.
 
-Free. Made by The Growth Folks®.
+PRIVACY
+No account and no server. Your workspaces, rules and history stay in your browser. The extension makes a network request only when you ask it to: to your own link shortener, to the pages you check, or to your own webhook. With Pro, it also checks your licence key with our payment provider every few days. It contains no analytics or tracking.
+
+Made by The Growth Folks®.
 https://thegrowthfolks.com/tools/utm-builder/
 ```
 
@@ -154,14 +158,14 @@ No, I am not using remote code.
 
 ### Data usage
 
-Nothing is ever sent to The Growth Folks®. We run no server, analytics or telemetry.
+Nothing is ever sent to The Growth Folks®. We run no server, analytics or telemetry. For Pro users only, the licence key and an activation ID go to Dodo Payments (our payment provider and Merchant of Record) on activation, about every 3 days and on deactivation.
 
 | CWS category | Tick? | What happens |
 |---|---|---|
 | Personally identifiable information | No | Not collected. The optional "Your name" setting stays on the device and is only added to the user's own history, activity log and webhook. |
 | Health information | No | Not handled. |
 | Financial and payment information | No | Not handled. |
-| **Authentication information** | **Yes (recommended)** | If the user sets up a shortener, the API key they enter is stored locally and sent only to that provider when they click Shorten, Test or Clicks. Exports leave the key out. |
+| **Authentication information** | **Yes (recommended)** | If the user sets up a shortener, the API key they enter is stored locally and sent only to that provider when they click Shorten, Test or Clicks. Exports leave the key out. A Pro licence key is stored locally and sent only to Dodo Payments to check the subscription. |
 | **Personal communications** | **Yes (recommended)** | "Check this draft" reads the link addresses and link text in an open email draft, only when the user clicks, on a site they allowed. Pasted email HTML is processed the same way. This data stays in the browser and isn't stored after the check. |
 | Location | No | Not handled. The WhatsApp country code comes from the browser's language setting and is stored locally. |
 | **Web history** | **Yes (recommended)** | On the user's action, the active tab's URL and title pre-fill the form; built links (with page titles) are saved in a local history the user can search, export or clear. A URL leaves the device only for Shorten, a link/redirect check or the user's own webhook. |
@@ -196,7 +200,9 @@ No account, login or API key is needed to test the core features.
    https://example.com/?utm_source=Newsletter&utm_medium=Email#top https://example.com/#utm_source=x
    Both links are flagged, with fixed versions to copy.
 6. WhatsApp tab: enter a number and message; the wa.me link updates and contains a tagged website link. Click "QR code".
-7. Optional features (no need to test): "Check this draft" asks for access to the email site (Gmail, Outlook, HubSpot, Mailchimp or Klaviyo) on first use; "Check redirects" and "Live link checks" ask for the optional http/https permission; a link shortener asks for its provider's host and needs the user's own key; a webhook asks for the one origin entered; "Side panel follows the tab" asks for the optional tabs permission.
+7. Pro test: open Settings (gear icon) → Plan, paste the test key below into "Licence key" and click Activate. The plan reads Pro. "+ New" now adds a second workspace and "Export rules file" works; on Free both say they are part of Pro. "Deactivate on this browser" returns to Free.
+   Pro test key: <paste a live-mode key here: create a 100% discount code in Dodo, buy Pro with it, copy the key from the email>
+8. Optional features (no need to test): "Check this draft" asks for access to the email site (Gmail, Outlook, HubSpot, Mailchimp or Klaviyo) on first use; "Check redirects" and "Live link checks" ask for the optional http/https permission; a link shortener asks for its provider's host and needs the user's own key; a webhook asks for the one origin entered; "Side panel follows the tab" asks for the optional tabs permission.
 
-The extension has no content scripts and makes no network requests unless the user clicks Shorten, Clicks, Check link, Check redirects or Test landing, turns on live link checks, or sets up their own webhook.
+The extension has no content scripts and makes no network requests unless the user clicks Shorten, Clicks, Check link, Check redirects or Test landing, turns on live link checks, or sets up their own webhook. Pro licence checks are the one exception: POST to live.dodopayments.com/licenses/activate, /validate (about every 3 days) and /deactivate with the key and an activation ID only, for users who entered a key. Dodo's endpoints allow cross-origin requests, so no extra host permission is needed. externally_connectable is limited to https://thegrowthfolks.com/* so the post-checkout thank-you page can hand the new key to the extension; it accepts two messages only (ping and activate).
 ```

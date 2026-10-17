@@ -2,6 +2,12 @@
 // redirect checks for the Checker (run here so they keep going if the popup closes).
 
 import { checkLink } from '../lib/net.js';
+import { activateLicense, revalidateIfDue } from '../lib/license.js';
+import { getPlan } from '../lib/plan.js';
+import { handleSiteMessage } from '../lib/site-activate.js';
+
+// Licence keys are re-checked at most every few days, and only for users who activated one.
+revalidateIfDue().catch(() => {});
 
 const WELCOME_URL =
   'https://thegrowthfolks.com/tools/utm-builder/welcome/?utm_source=chrome-extension&utm_medium=referral&utm_campaign=utm-builder&utm_content=welcome';
@@ -20,6 +26,22 @@ chrome.runtime.onInstalled.addListener(details => {
   // First install only (not updates): open the getting-started page.
   // tabs.create needs no "tabs" permission.
   if (details?.reason === 'install') chrome.tabs.create({ url: WELCOME_URL }).catch(() => {});
+  // Local install version, so people who installed during the free launch keep Pro for a while (plan.js).
+  // Updates from a version without this record installed before the paid build. Never sent anywhere.
+  if (details?.reason === 'install' || details?.reason === 'update') {
+    chrome.storage.local.get('installedVersion').then(({ installedVersion }) => {
+      if (installedVersion) return;
+      const v = details.reason === 'install' ? chrome.runtime.getManifest().version : `<=${details.previousVersion || '0.3.0'}`;
+      chrome.storage.local.set({ installedVersion: v, installedAt: Date.now() });
+    }).catch(() => {});
+  }
+});
+
+// The thank-you page on thegrowthfolks.com hands over the licence key after checkout. Only that site can send
+// messages (manifest externally_connectable).
+chrome.runtime.onMessageExternal.addListener((msg, sender, reply) => {
+  handleSiteMessage(msg, sender, { activate: activateLicense, getPlan }).then(reply);
+  return true;
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {

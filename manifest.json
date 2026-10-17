@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "UTM Builder & Checker for GA4 – The Growth Folks®",
   "short_name": "UTM Builder",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "homepage_url": "https://thegrowthfolks.com/tools/utm-builder/",
   "description": "Build and check UTM links for GA4. See the channel before you share. Page and email checker, WhatsApp links, bulk and QR.",
   "minimum_chrome_version": "116",
@@ -51,6 +51,11 @@
     "https://*/*",
     "http://*/*"
   ],
+  "externally_connectable": {
+    "matches": [
+      "https://thegrowthfolks.com/*"
+    ]
+  },
   "commands": {
     "_execute_action": {
       "suggested_key": {
